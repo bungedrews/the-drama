@@ -63,13 +63,13 @@ export default function Results() {
   }, [matchResponses]);
 
   return (
-    <div className="screen" style={{ background: '#161210' }}>
+    <div className="screen" style={{ background: '#050615' }}>
       <div style={{ width: '100%', maxWidth: 1280, boxSizing: 'border-box', padding: '56px 48px 80px' }}>
         <div className="eyebrow">The Drama · 2026 · Meetup Results</div>
         <div style={{ marginTop: 10, fontFamily: "'Pinyon Script', cursive", fontSize: 48 }}>
           What the room thinks
         </div>
-        <div style={{ marginTop: 10, fontSize: 13, color: 'rgba(244,236,224,0.55)', fontStyle: 'italic' }}>
+        <div style={{ marginTop: 10, fontSize: 13, color: 'rgba(243,238,230,0.55)', fontStyle: 'italic' }}>
           Live results — updates as people finish the activities.
         </div>
 
@@ -82,7 +82,7 @@ export default function Results() {
           }}
         >
           <div className="card" style={{ minHeight: 180 }}>
-            <div className="eyebrow" style={{ color: '#7a3a33' }}>Film Pulse Check</div>
+            <div className="eyebrow" style={{ color: '#c23a27' }}>Film Pulse Check</div>
             <div style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 48, marginTop: 10 }}>
               {pulseAverage}
             </div>
@@ -92,7 +92,7 @@ export default function Results() {
           </div>
 
           <div className="card" style={{ minHeight: 180 }}>
-            <div className="eyebrow" style={{ color: '#7a3a33' }}>Character Match</div>
+            <div className="eyebrow" style={{ color: '#c23a27' }}>Character Match</div>
             <div style={{ marginTop: 10, fontSize: 13, color: '#5c4c40' }}>
               {Object.keys(answerCounts).length === 0 && 'No responses yet.'}
               {Object.entries(answerCounts).map(([answer, count]) => (
@@ -105,7 +105,7 @@ export default function Results() {
           </div>
 
           <div className="card" style={{ minHeight: 180 }}>
-            <div className="eyebrow" style={{ color: '#7a3a33' }}>Most contested confession</div>
+            <div className="eyebrow" style={{ color: '#c23a27' }}>Most contested confession</div>
             {mostContested ? (
               <>
                 <div style={{ fontSize: 15, fontWeight: 600, marginTop: 10, lineHeight: 1.4 }}>
@@ -123,7 +123,7 @@ export default function Results() {
           </div>
         </div>
 
-        <div style={{ marginTop: 52, fontSize: 11, color: 'rgba(244,236,224,0.4)' }}>
+        <div style={{ marginTop: 52, fontSize: 11, color: 'rgba(243,238,230,0.4)' }}>
           The Deep Dive, The Discourse, the photo wall and the souvenir gallery are curated
           manually and added here closer to the event — ask Claude to wire those up once the
           format for each is settled.

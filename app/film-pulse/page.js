@@ -73,17 +73,17 @@ export default function FilmPulse() {
   }, [ratings]);
 
   return (
-    <div className="screen" style={{ background: '#161210' }}>
+    <div className="screen" style={{ background: '#050615' }}>
       <div className="screen-inner">
         <div className="label">FILM PULSE CHECK — LIVE</div>
 
         <div style={{ marginTop: 12, fontSize: 23, fontWeight: 700 }}>
-          Rate the film, 1 to 10
+          Rate the film from 1 to 10
         </div>
 
         {!submitted && (
-          <div style={{ marginTop: 6, fontSize: 12.5, color: 'rgba(244,236,224,0.55)' }}>
-            Tap a number, then submit. Results update live for the whole room.
+          <div style={{ marginTop: 6, fontSize: 12.5, color: 'rgba(243,238,230,0.55)' }}>
+            Tap a number, then submit. Results update live for the whole group.
           </div>
         )}
 
@@ -103,13 +103,13 @@ export default function FilmPulse() {
                   onClick={() => setPicked(n)}
                   style={{
                     aspectRatio: '1',
-                    border: picked === n ? '1px solid #FD513B' : '1px solid #3a2f28',
-                    background: picked === n ? 'rgba(253,81,59,0.18)' : '#1e1814',
+                    border: picked === n ? '1px solid #FD513B' : '1px solid #232850',
+                    background: picked === n ? '#FD513B' : '#0e1030',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 15,
-                    color: picked === n ? '#f4ece0' : 'rgba(244,236,224,0.6)',
+                    color: picked === n ? '#f3eee6' : 'rgba(243,238,230,0.6)',
                     cursor: 'pointer',
                   }}
                 >
@@ -127,29 +127,29 @@ export default function FilmPulse() {
             </button>
 
             {error && (
-              <div style={{ marginTop: 12, fontSize: 12, color: '#d49281' }}>{error}</div>
+              <div style={{ marginTop: 12, fontSize: 12, color: '#ff8a78' }}>{error}</div>
             )}
           </>
         )}
 
         {submitted && (
-          <div style={{ marginTop: 26, borderTop: '1px solid #3a2f28', paddingTop: 22 }}>
+          <div style={{ marginTop: 26, borderTop: '1px solid #232850', paddingTop: 22 }}>
             <div className="label">LIVE ROOM AVERAGE</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 10 }}>
               <div style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 58, lineHeight: 1 }}>
                 {average}
               </div>
-              <div style={{ fontSize: 13, color: 'rgba(244,236,224,0.5)' }}>/ 10</div>
+              <div style={{ fontSize: 13, color: 'rgba(243,238,230,0.5)' }}>/ 10</div>
             </div>
-            <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(244,236,224,0.45)' }}>
+            <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(243,238,230,0.45)' }}>
               based on {ratings.length} rating{ratings.length === 1 ? '' : 's'} so far
             </div>
 
             <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 7 }}>
               {Array.from({ length: 10 }, (_, i) => 10 - i).map((n) => (
                 <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 18, fontSize: 10, color: 'rgba(244,236,224,0.4)' }}>{n}</div>
-                  <div style={{ flex: 1, height: 6, background: '#231c17', overflow: 'hidden' }}>
+                  <div style={{ width: 18, fontSize: 10, color: 'rgba(243,238,230,0.4)' }}>{n}</div>
+                  <div style={{ flex: 1, height: 6, background: '#151839', overflow: 'hidden' }}>
                     <div
                       style={{
                         width: `${(distribution.counts[n] / distribution.max) * 100}%`,
@@ -162,8 +162,8 @@ export default function FilmPulse() {
               ))}
             </div>
 
-            <div style={{ marginTop: 14, fontSize: 11, color: 'rgba(244,236,224,0.4)' }}>
-              This tally updates as everyone in the room votes.
+            <div style={{ marginTop: 24, marginBottom: 24, fontSize: 11, color: 'rgba(243,238,230,0.4)' }}>
+              Wait until everyone has submitted their rating before going NEXT.
             </div>
           </div>
         )}

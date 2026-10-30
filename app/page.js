@@ -37,7 +37,7 @@ export default function Landing() {
               fontFamily: "'Cormorant Garamond', serif",
               fontSize: 14,
               letterSpacing: 1.5,
-              color: '#7a3a33',
+              color: '#E1250E',
             }}
           >
             You are warmly invited to
@@ -46,9 +46,9 @@ export default function Landing() {
           <div
             style={{
               marginTop: 20,
-              width: 180,
-              height: 180,
-              border: '1px solid #7a3a33',
+              width: 250,
+              height: 200,
+              border: '1px solid #E1250E',
               padding: 5,
               boxSizing: 'border-box',
             }}
@@ -58,15 +58,14 @@ export default function Landing() {
                 width: '100%',
                 height: '100%',
                 background: '#e7ded0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                overflow: 'hidden',
               }}
             >
-              <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#b9a98f" strokeWidth="1.3">
-                <circle cx="12" cy="8.5" r="3.4" />
-                <path d="M5 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5" />
-              </svg>
+            <img
+              src="/image_landingpage.jpg"
+              alt="Charlie & Emma"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
             </div>
           </div>
 
@@ -103,9 +102,9 @@ export default function Landing() {
               color: '#4a3b32',
             }}
           >
-            Friday, November 6th 2026
+            Friday, November 6th 2026<br />
             <br />
-            Hamburg
+            Mittelweg 138, Hamburg
           </div>
 
           <div style={{ marginTop: 18, width: 46, height: 1, background: '#b9a98f' }} />
@@ -127,6 +126,7 @@ export default function Landing() {
           <div
             style={{
               marginTop: 22,
+              marginBottom: 22,
               fontFamily: "'Cormorant Garamond', serif",
               fontSize: 13,
               lineHeight: 1.6,
@@ -146,8 +146,8 @@ export default function Landing() {
             style={{
               width: '100%',
               boxSizing: 'border-box',
-              border: '1px solid #7a3a33',
-              color: '#7a3a33',
+              border: '1px solid #E1250E',
+              color: '#E1250E',
               textAlign: 'center',
               padding: 13,
               fontFamily: "'Cormorant Garamond', serif",

@@ -47,11 +47,11 @@ export default function CharacterMatch() {
   }
 
   return (
-    <div className="screen" style={{ background: '#161210' }}>
+    <div className="screen" style={{ background: '#050615' }}>
       <div className="screen-inner">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div className="label">CHARACTER MATCH</div>
-          <div style={{ fontSize: 11, color: 'rgba(244,236,224,0.4)' }}>
+          <div style={{ fontSize: 11, color: 'rgba(243,238,230,0.4)' }}>
             Q{Math.min(step + 1, questions.length)} / {questions.length}
           </div>
         </div>
@@ -62,11 +62,15 @@ export default function CharacterMatch() {
 
         {!done && (
           <>
-            <div style={{ marginTop: 30, fontSize: 21, fontWeight: 600, lineHeight: 1.4 }}>
+            <div style={{ marginTop: 30, fontSize: 12, fontWeight: 700, letterSpacing: 1.2, color: '#FD513B' }}>
+              {question.title}
+            </div>
+
+            <div style={{ marginTop: 8, fontSize: 21, fontWeight: 600, lineHeight: 1.4 }}>
               {question.text}
             </div>
 
-            <div style={{ marginTop: 26, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ marginTop: 26, marginBottom: 36, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {question.options.map((opt) => (
                 <div
                   key={opt.id}
@@ -76,26 +80,24 @@ export default function CharacterMatch() {
                     alignItems: 'center',
                     gap: 14,
                     padding: '14px 16px',
-                    border: picked === opt.id ? '1px solid #FD513B' : '1px solid #3a2f28',
-                    background: picked === opt.id ? 'rgba(253,81,59,0.12)' : '#1e1814',
+                    border: picked === opt.id ? '1px solid #FD513B' : '1px solid #232850',
+                    background: picked === opt.id ? 'rgba(253,81,59,0.12)' : '#0e1030',
                     cursor: 'pointer',
                   }}
                 >
                   <span style={{ fontFamily: "'Bebas Neue', sans-serif", color: '#FD513B', fontSize: 16 }}>
                     {opt.id.toUpperCase()}
                   </span>
-                  <span style={{ fontSize: 13.5, color: 'rgba(244,236,224,0.85)' }}>{opt.text}</span>
+                  <span style={{ marginfontSize: 13.5, color: 'rgba(243,238,230,0.85)' }}>{opt.text}</span>
                 </div>
               ))}
             </div>
 
-            {error && <div style={{ marginTop: 12, fontSize: 12, color: '#d49281' }}>{error}</div>}
+            {error && <div style={{ marginBottom: 24, marginTop: 12, fontSize: 12, color: '#ff8a78' }}>{error}</div>}
 
             <div style={{ flex: 1 }} />
 
-            <div style={{ fontSize: 11, color: 'rgba(244,236,224,0.45)', marginBottom: 14 }}>
-              Your answers build your film persona — revealed on your souvenir card at the event.
-            </div>
+           
 
             <button disabled={!picked || saving} onClick={handleNext}>
               {saving ? 'SAVING…' : step + 1 < questions.length ? 'NEXT QUESTION' : 'FINISH'}

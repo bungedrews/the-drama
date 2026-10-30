@@ -6,9 +6,9 @@ import { EVENT_ID } from '@/lib/constants';
 import { confessionScenarios as scenarios } from '@/lib/questions';
 
 const FLAGS = [
-  { id: 'green', label: 'Green flag', dot: '#6a9e6d', border: 'rgba(76,175,80,0.4)', bg: 'rgba(76,175,80,0.10)' },
-  { id: 'yellow', label: 'Yellow flag', dot: '#c9a24a', border: '#3a2f28', bg: '#1e1814' },
-  { id: 'red', label: 'Red flag', dot: '#b5533f', border: '#3a2f28', bg: '#1e1814' },
+  { id: 'green', label: 'Green flag', dot: '#4fbf8a', border: 'rgba(79,191,138,0.4)', bg: 'rgba(79,191,138,0.10)' },
+  { id: 'yellow', label: 'Yellow flag', dot: '#e8b84a', border: '#232850', bg: '#0e1030' },
+  { id: 'red', label: 'Red flag', dot: '#FD513B', border: '#232850', bg: '#0e1030' },
 ];
 
 export default function Confessions() {
@@ -85,18 +85,18 @@ export default function Confessions() {
   const pct = (id) => Math.round((votes.filter((v) => v.vote === id).length / total) * 100);
 
   return (
-    <div className="screen" style={{ background: '#161210' }}>
+    <div className="screen" style={{ background: '#050615' }}>
       <div className="screen-inner">
         {!done && (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div className="label">CONFESSIONS &amp; RED FLAGS — LIVE</div>
-              <div style={{ fontSize: 11, color: 'rgba(244,236,224,0.4)' }}>
+              <div style={{ fontSize: 11, color: 'rgba(243,238,230,0.4)' }}>
                 {step + 1} / {scenarios.length}
               </div>
             </div>
 
-            <div style={{ marginTop: 22, padding: 20, border: '1px solid #3a2f28', background: '#1e1814' }}>
+            <div style={{ marginTop: 22, padding: 20, border: '1px solid #232850', background: '#0e1030' }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", color: '#FD513B', fontSize: 11, letterSpacing: 1, marginBottom: 10 }}>
                 SCENARIO
               </div>
@@ -105,7 +105,7 @@ export default function Confessions() {
 
             {!voted && (
               <>
-                <div style={{ marginTop: 20, fontSize: 12, color: 'rgba(244,236,224,0.55)' }}>
+                <div style={{ marginTop: 20, fontSize: 12, color: 'rgba(243,238,230,0.55)' }}>
                   How bad is it?
                 </div>
                 <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>
@@ -127,25 +127,25 @@ export default function Confessions() {
                       }}
                     >
                       <div style={{ width: 20, height: 20, borderRadius: '50%', background: f.dot }} />
-                      <div style={{ fontSize: 12, color: 'rgba(244,236,224,0.8)' }}>{f.label}</div>
+                      <div style={{ fontSize: 12, color: 'rgba(243,238,230,0.8)' }}>{f.label}</div>
                     </div>
                   ))}
                 </div>
-                {error && <div style={{ marginTop: 12, fontSize: 12, color: '#d49281' }}>{error}</div>}
+                {error && <div style={{ marginTop: 12, fontSize: 12, color: '#ff8a78' }}>{error}</div>}
               </>
             )}
 
             {voted && (
-              <div style={{ marginTop: 28, borderTop: '1px solid #3a2f28', paddingTop: 22 }}>
+              <div style={{ marginTop: 28, borderTop: '1px solid #232850', paddingTop: 22 }}>
                 <div className="label">THE ROOM SO FAR</div>
                 <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {FLAGS.map((f) => (
                     <div key={f.id}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 5 }}>
                         <span>{f.label.replace(' flag', '')}</span>
-                        <span style={{ color: 'rgba(244,236,224,0.5)' }}>{pct(f.id)}%</span>
+                        <span style={{ color: 'rgba(243,238,230,0.5)' }}>{pct(f.id)}%</span>
                       </div>
-                      <div style={{ height: 6, background: '#231c17', overflow: 'hidden' }}>
+                      <div style={{ height: 6, background: '#151839', overflow: 'hidden' }}>
                         <div style={{ width: `${pct(f.id)}%`, height: '100%', background: f.dot }} />
                       </div>
                     </div>
@@ -161,7 +161,7 @@ export default function Confessions() {
                 {step + 1 < scenarios.length ? 'NEXT SCENARIO' : 'FINISH'}
               </button>
             ) : (
-              <div style={{ fontSize: 11, color: 'rgba(244,236,224,0.4)' }}>
+              <div style={{ fontSize: 11, color: 'rgba(243,238,230,0.4)' }}>
                 Most-contested scenario of the night gets flagged on the results page.
               </div>
             )}
