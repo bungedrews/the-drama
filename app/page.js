@@ -150,7 +150,7 @@ export default function Landing() {
               color: '#E1250E',
               textAlign: 'center',
               padding: 13,
-              fontFamily: "'Cormorant Garamond', serif",
+              fontFamily: "'bebas neue', sans-serif",
               fontSize: 22,
               letterSpacing: 1,
               display: 'block',

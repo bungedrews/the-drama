@@ -108,7 +108,7 @@ export default function CharacterMatch() {
         {done && (
           <>
             <div style={{ marginTop: 40, fontSize: 20, fontWeight: 600, textAlign: 'center' }}>
-              That's everything — your persona will be revealed on your souvenir card.
+              That's everything! Your match will be revealed on your souvenir card at the end of the event.
             </div>
             <div style={{ flex: 1 }} />
             <a href="/confessions" className="btn" style={{ textAlign: 'center', display: 'block' }}>
