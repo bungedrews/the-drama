@@ -6,7 +6,7 @@ import { EVENT_ID } from '@/lib/constants';
 import { confessionScenarios as scenarios } from '@/lib/questions';
 
 const FLAGS = [
-  { id: 'green', label: 'Green flag', dot: '#4fbf8a', border: 'rgba(79,191,138,0.4)', bg: '#0e1030' },
+  { id: 'green', label: 'Green flag', dot: '#4fbf8a', border: '#232850', bg: '#0e1030' },
   { id: 'yellow', label: 'Yellow flag', dot: '#e8b84a', border: '#232850', bg: '#0e1030' },
   { id: 'red', label: 'Red flag', dot: '#FD513B', border: '#232850', bg: '#0e1030' },
 ];

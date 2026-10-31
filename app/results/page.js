@@ -125,8 +125,7 @@ export default function Results() {
 
         <div style={{ marginTop: 52, fontSize: 11, color: 'rgba(243,238,230,0.4)' }}>
           The Deep Dive, The Discourse, the photo wall and the souvenir gallery are curated
-          manually and added here closer to the event — ask Claude to wire those up once the
-          format for each is settled.
+          manually and added here closer to the event.
         </div>
       </div>
     </div>
