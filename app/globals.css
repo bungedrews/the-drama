@@ -14,7 +14,7 @@ body {
 a { text-decoration: none; color: inherit; }
 
 .screen {
-  min-height: 100vh;
+  min-height: calc(100vh - 56px);
   display: flex;
   justify-content: center;
 }
@@ -22,9 +22,9 @@ a { text-decoration: none; color: inherit; }
 .screen-inner {
   width: 100%;
   max-width: 430px;
-  min-height: 100vh;
+  min-height: calc(100vh - 56px);
   box-sizing: border-box;
-  padding: 40px 26px 36px;
+  padding: 22px 26px 36px;
   display: flex;
   flex-direction: column;
 }
@@ -56,7 +56,7 @@ button, .btn {
   width: 100%;
   box-sizing: border-box;
   margin-top: 20px;
-  bottom: 0;
+  
 }
 
 button:disabled { opacity: 0.35; pointer-events: none; }
@@ -78,4 +78,100 @@ button:disabled { opacity: 0.35; pointer-events: none; }
   color: #3a2a22;
   padding: 22px;
   box-sizing: border-box;
+}
+
+/* ---------- top bar + burger menu ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  background: #050615;
+  border-bottom: 1px solid #232850;
+}
+.topbar-title {
+  font-family: 'Bebas Neue', sans-serif;
+  color: #FD513B;
+  letter-spacing: 2px;
+  font-size: 18px;
+}
+.burger {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #f3eee6;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.bar1.x { transform: translateY(7px) rotate(45deg); }
+.bar2.x { opacity: 0; }
+.bar3.x { transform: translateY(-7px) rotate(-45deg); }
+
+.menu-overlay {
+  position: fixed;
+  inset: 56px 0 0 0;
+  z-index: 40;
+  background: rgba(5, 6, 21, 0.78);
+  backdrop-filter: blur(4px);
+}
+.menu-panel {
+  background: #050615;
+  border-bottom: 1px solid #232850;
+  padding: 24px 22px 18px;
+  max-width: 430px;
+  margin-left: auto;
+}
+.menu-link {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  border: 1px solid #232850;
+  background: #0e1030;
+}
+.menu-link.current {
+  border-color: #FD513B;
+  background: rgba(253, 81, 59, 0.12);
+}
+.menu-link-title { font-size: 15px; font-weight: 600; }
+.menu-link-note { font-size: 11.5px; color: rgba(243, 238, 230, 0.5); }
+
+/* ---------- floating flags (Confessions) ---------- */
+.flag-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  overflow: hidden;
+}
+.flag-floater {
+  position: absolute;
+  bottom: -50px;
+  opacity: 0;
+  animation-name: flag-rise;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+@keyframes flag-rise {
+  0%   { transform: translate(0, 0) rotate(-8deg); opacity: 0; }
+  10%  { opacity: 0.95; }
+  35%  { transform: translate(var(--sway), -35vh) rotate(8deg); }
+  65%  { transform: translate(calc(var(--sway) * -0.6), -70vh) rotate(-6deg); opacity: 0.9; }
+  100% { transform: translate(calc(var(--sway) * 0.4), -115vh) rotate(6deg); opacity: 0; }
 }

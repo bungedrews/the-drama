@@ -1,4 +1,5 @@
 import './globals.css';
+import BurgerMenu from '@/components/BurgerMenu';
 
 export const metadata = {
   title: 'The Drama — Film Club',
@@ -14,7 +15,10 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=EB+Garamond:wght@400;500;600&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <BurgerMenu />
+        {children}
+      </body>
     </html>
   );
 }
