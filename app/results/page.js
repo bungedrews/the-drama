@@ -1308,9 +1308,6 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
   const loggedRef = useRef(new Set());
   async function logShare(kind) {
     try {
-      const key = `${kind}|${dataKey}`;
-      if (loggedRef.current.has(key)) return; // same recap + same action: count it once
-      loggedRef.current.add(key);
       const cfg = JSON.parse(dataKey);
 
       let imageUrl = null;
@@ -1348,11 +1345,23 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
     logShare('preview');
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!blobRef.current) return;
-    triggerDownload(blobRef.current, 'the-drama-recap.png');
     logShare('save');
-    setNote('Saved. On iPhone you can also press and hold the image → Add to Photos.');
+    const file = new File([blobRef.current], 'the-drama-recap.png', { type: 'image/png' });
+    const isTouch = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '');
+    // on phones the share sheet has "Save Image" and needs no download permission
+    if (isTouch && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        setNote('Tip: choose "Save Image" in the list to put it in your photos.');
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+      }
+    }
+    triggerDownload(blobRef.current, 'the-drama-recap.png');
+    setNote('If nothing happens, press and hold the picture above → Add to Photos.');
   }
 
   async function handleShare() {
@@ -1609,7 +1618,10 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
                 <button onClick={handleShare} style={{ background: RED, borderColor: RED, color: '#050615', fontWeight: 700 }}>SHARE</button>
                 <button onClick={handleSave} style={{ borderColor: LINE }}>SAVE AS PHOTO</button>
               </div>
-              {note && <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5, marginTop: 8 }}>{note}</div>}
+              <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5, marginTop: 10 }}>
+                Saving not working? Press and hold the picture → Add to Photos.
+              </div>
+              {note && <div style={{ fontSize: 12, color: SOFT, lineHeight: 1.5, marginTop: 6 }}>{note}</div>}
             </div>
           </div>
         </div>
