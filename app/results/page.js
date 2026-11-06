@@ -192,7 +192,7 @@ function PersonalityChart({ bars, topCode, maxPx = 180 }) {
               onMouseEnter={() => setHover(b.code)}
               onMouseLeave={() => setHover(null)}
               onClick={() => setPinned((p) => (p === b.code ? null : b.code))}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
+              style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
             >
               <div style={{ height: 26, fontSize: 18, fontWeight: 700, color: isTop ? TEXT : SOFT }}>
                 {b.pct}%
@@ -212,12 +212,27 @@ function PersonalityChart({ bars, topCode, maxPx = 180 }) {
                   transition: 'height 0.5s, opacity 0.15s',
                 }}
               />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* labels live in their own row, so long names never push a bar out of line */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+        {bars.map((b) => {
+          const isTop = b.value > 0 && b.value === max;
+          return (
+            <div
+              key={b.code}
+              onMouseEnter={() => setHover(b.code)}
+              onMouseLeave={() => setHover(null)}
+              onClick={() => setPinned((p) => (p === b.code ? null : b.code))}
+              style={{ flex: 1, minWidth: 0, textAlign: 'center', cursor: 'pointer' }}
+            >
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 1, color: isTop ? RED : TEXT, marginTop: 8 }}>
                 {b.code}
               </div>
-              <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', lineHeight: 1.3, minHeight: 28 }}>
-                {b.name}
-              </div>
+              <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.3 }}>{b.name}</div>
             </div>
           );
         })}
@@ -1136,6 +1151,9 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
   const [picked, setPicked] = useState([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [fontId, setFontId] = useState('script');
+  const [addOpen, setAddOpen] = useState(false);
+  const [dragging, setDragging] = useState(null);
+  const wrapRef = useRef(null);
 
   useEffect(() => {
     supabase
@@ -1155,7 +1173,42 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
   const add = (type) => {
     if (blocks.includes(type) || !fits(type)) return;
     setBlocks([...blocks, type]);
+    setAddOpen(false);
+    if (type === 'snaps' && photos.length) setPickerOpen(true);
   };
+
+  // where each block sits on the 1080x1920 canvas (same maths as drawRecap)
+  const gapPx = Math.max(0, Math.min(70, (CANVAS_BOTTOM - CANVAS_TOP - used) / (blocks.length + 1)));
+  const slots = [];
+  {
+    let yy = CANVAS_TOP + gapPx;
+    blocks.forEach((type) => {
+      const h = blockH(type, snapCount);
+      slots.push({ type, y: yy, h });
+      yy += h + gapPx;
+    });
+  }
+  const freeTypes = Object.keys(BLOCK_TYPES).filter((t) => !blocks.includes(t));
+  const canAddMore = freeTypes.some((t) => fits(t));
+  const nextY = slots.length ? slots[slots.length - 1].y + slots[slots.length - 1].h + 10 : CANVAS_TOP + 40;
+
+  const onDragStart = (e, type) => {
+    e.preventDefault();
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+    setDragging(type);
+  };
+  const onDragMove = (e) => {
+    if (!dragging || !wrapRef.current) return;
+    const r = wrapRef.current.getBoundingClientRect();
+    const yc = ((e.clientY - r.top) / r.height) * 1920;
+    const others = slots.filter((sl) => sl.type !== dragging);
+    let idx = 0;
+    others.forEach((sl) => { if (sl.y + sl.h / 2 < yc) idx++; });
+    const next = others.map((sl) => sl.type);
+    next.splice(idx, 0, dragging);
+    if (next.join() !== blocks.join()) setBlocks(next);
+  };
+  const onDragEnd = () => setDragging(null);
   const remove = (type) => setBlocks(blocks.filter((b) => b !== type));
   const move = (i, dir) => {
     const j = i + dir;
@@ -1318,65 +1371,89 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
       </div>
 
       <div style={{ marginTop: 26, display: 'flex', gap: 40, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-        <div style={{ width: 300, flexShrink: 0, border: `1px solid ${LINE}`, background: '#0e1030' }}>
-          {preview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview} alt="Your recap" style={{ width: '100%', display: 'block' }} />
-          ) : (
-            <div style={{ aspectRatio: '9 / 16', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: MUTED }}>
-              building your recap…
-            </div>
+        <div style={{ width: 300, flexShrink: 0 }}>
+          <div ref={wrapRef} style={{ position: 'relative', border: `1px solid ${LINE}`, background: '#0e1030' }}>
+            {preview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={preview} alt="Your recap" draggable={false} style={{ width: '100%', display: 'block', userSelect: 'none' }} />
+            ) : (
+              <div style={{ aspectRatio: '9 / 16', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: MUTED }}>
+                building your recap…
+              </div>
+            )}
+
+            {/* tap target for the empty canvas: invisible, sits on the + the picture already shows */}
+            {blocks.length === 0 && (
+              <button
+                onClick={() => setAddOpen(true)}
+                aria-label="Add to your recap"
+                style={{
+                  position: 'absolute', left: `${(90 / 1080) * 100}%`, width: `${(900 / 1080) * 100}%`,
+                  top: `${(470 / 1920) * 100}%`, height: `${(1300 / 1920) * 100}%`,
+                  margin: 0, padding: 0, background: 'transparent', border: 'none', cursor: 'pointer',
+                }}
+              />
+            )}
+
+            {/* one box per block: drag the handle to reorder, ✕ to remove */}
+            {slots.map((sl) => (
+              <div
+                key={sl.type}
+                onClick={() => { if (sl.type === 'snaps' && photos.length) setPickerOpen(true); }}
+                style={{
+                  position: 'absolute', left: '4%', right: '4%',
+                  top: `${(sl.y / 1920) * 100}%`, height: `${(sl.h / 1920) * 100}%`,
+                  border: `1px dashed ${dragging === sl.type ? TEXT : 'rgba(253,81,59,0.55)'}`,
+                  background: dragging === sl.type ? 'rgba(253,81,59,0.12)' : 'transparent',
+                  boxSizing: 'border-box', transition: dragging ? 'none' : 'top 0.15s',
+                }}
+              >
+                <div
+                  onPointerDown={(e) => onDragStart(e, sl.type)}
+                  onPointerMove={onDragMove}
+                  onPointerUp={onDragEnd}
+                  onPointerCancel={onDragEnd}
+                  onClick={(e) => e.stopPropagation()}
+                  title="Drag to reorder"
+                  style={{
+                    position: 'absolute', top: 4, right: 40, padding: '3px 8px', background: '#050615', color: TEXT,
+                    border: `1px solid ${RED}`, fontSize: 13, lineHeight: 1, cursor: 'grab', touchAction: 'none', userSelect: 'none',
+                  }}
+                >
+                  ⠿
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); remove(sl.type); }}
+                  aria-label="Remove"
+                  style={{ position: 'absolute', top: 4, right: 4, margin: 0, width: 'auto', padding: '3px 8px', fontSize: 13, background: '#050615', border: `1px solid ${RED}`, lineHeight: 1 }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+
+            {/* the + under the last block */}
+            {blocks.length > 0 && canAddMore && (
+              <button
+                onClick={() => setAddOpen(true)}
+                aria-label="Add more"
+                style={{
+                  position: 'absolute', left: '4%', right: '4%', top: `${(Math.min(nextY, CANVAS_BOTTOM - 110) / 1920) * 100}%`, height: `${(100 / 1920) * 100}%`,
+                  margin: 0, width: 'auto', background: 'rgba(5,6,21,0.55)', border: `1px dashed ${RED}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', padding: 0,
+                }}
+              >
+                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 30, lineHeight: 1, color: RED }}>+</span>
+                <span style={{ fontSize: 11, letterSpacing: 1, color: TEXT }}>ADD</span>
+              </button>
+            )}
+          </div>
+          {blocks.length > 1 && (
+            <div style={{ marginTop: 8, fontSize: 11, color: MUTED }}>Drag ⠿ up or down to change the order.</div>
           )}
         </div>
 
         <div style={{ flex: 1, minWidth: 250, maxWidth: 420 }}>
-          <div style={sectionLabel}>ADD TO YOUR RECAP</div>
-          <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10 }}>
-            {Object.keys(BLOCK_TYPES).map((type) => {
-              const disabled = blocks.includes(type) || !fits(type);
-              return (
-                <button key={type} disabled={false} onClick={() => add(type)} style={tile(disabled)}>
-                  <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, lineHeight: 1, color: disabled ? MUTED : RED }}>
-                    {blocks.includes(type) ? '✓' : '+'}
-                  </span>
-                  {BLOCK_TYPES[type].label}
-                </button>
-              );
-            })}
-          </div>
-          {used > CANVAS_ROOM - 300 && (
-            <div style={{ marginTop: 8, fontSize: 11, color: MUTED }}>
-              The canvas is getting full. Remove something to add more.
-            </div>
-          )}
-
-          {blocks.length > 0 && (
-            <div style={{ marginTop: 26 }}>
-              <div style={sectionLabel}>YOUR LAYOUT</div>
-              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {blocks.map((type, i) => (
-                  <div
-                    key={type}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      border: `1px solid ${LINE}`,
-                      padding: '8px 10px',
-                      fontSize: 13,
-                      color: SOFT,
-                    }}
-                  >
-                    <span style={{ flex: 1 }}>{BLOCK_TYPES[type].label}</span>
-                    <button style={smallBtn} onClick={() => move(i, -1)} disabled={i === 0} aria-label="Move up">↑</button>
-                    <button style={smallBtn} onClick={() => move(i, 1)} disabled={i === blocks.length - 1} aria-label="Move down">↓</button>
-                    <button style={smallBtn} onClick={() => remove(type)} aria-label="Remove">✕</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {blocks.includes('text') && (
             <div style={{ marginTop: 22 }}>
               <div style={sectionLabel}>YOUR WORDS</div>
@@ -1471,6 +1548,38 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
           </div>
         </div>
       </div>
+
+      {addOpen && (
+        <div
+          onClick={() => setAddOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(5,6,21,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 440, maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: '#0b0d28', border: `1px solid ${LINE}`, boxShadow: '0 24px 60px rgba(0,0,0,0.7)' }}
+          >
+            <div style={{ padding: '18px 20px', borderBottom: `1px solid ${LINE}`, display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 1, color: RED, lineHeight: 1 }}>WHAT DO YOU WANT TO ADD?</div>
+                <div style={{ marginTop: 4, fontSize: 12, color: MUTED }}>Tap one. You can reorder them on the canvas afterwards.</div>
+              </div>
+              <button onClick={() => setAddOpen(false)} style={{ margin: 0, width: 'auto', padding: '10px 18px', fontSize: 14 }}>CLOSE</button>
+            </div>
+            <div style={{ padding: 16, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {freeTypes.length === 0 && <div style={{ fontSize: 13, color: MUTED }}>Everything is already on your recap.</div>}
+              {freeTypes.map((type) => {
+                const ok = fits(type);
+                return (
+                  <button key={type} onClick={() => add(type)} disabled={!ok} style={tile(!ok)}>
+                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, lineHeight: 1, color: ok ? RED : MUTED }}>+</span>
+                    <span style={{ flex: 1 }}>{BLOCK_TYPES[type].label}{!ok && <span style={{ display: 'block', fontSize: 11, color: MUTED }}>No room left. Remove a block first.</span>}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {pickerOpen && (
         <div
