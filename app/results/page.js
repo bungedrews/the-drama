@@ -135,49 +135,60 @@ function BarChart({ items, maxPx = 150, labelSize = 12, photoTop = false }) {
 // Bar chart of the four personalities. Hover (or tap) a bar for a pop-over about that type.
 // Every bar is red; the winning bar is filled with its character's picture.
 function PersonalityChart({ bars, topCode, maxPx = 180 }) {
-  const [hover, setHover] = useState(null);
   const [pinned, setPinned] = useState(null);
-  const shown = hover || pinned;
+  const shown = pinned;
   const max = Math.max(1, ...bars.map((b) => b.value));
   const shownIdx = bars.findIndex((b) => b.code === shown);
   const shownBar = shownIdx >= 0 ? bars[shownIdx] : null;
-
-  // keep the pop-over inside the chart: left half anchors left, right half anchors right
-  const slot = (i) => `calc(${i} * (25% + 4px))`;
-  const popStyle =
-    shownIdx < 2
-      ? { left: slot(shownIdx) }
-      : { right: `calc(${3 - shownIdx} * (25% + 4px))` };
 
   return (
     <div style={{ position: 'relative', marginTop: 24 }}>
       {shownBar && (
         <div
+          onClick={() => setPinned(null)}
           style={{
-            position: 'absolute',
-            bottom: '100%',
-            marginBottom: 6,
-            width: 300,
-            maxWidth: '100%',
-            boxSizing: 'border-box',
-            padding: '16px 18px',
-            background: '#0e1030',
-            border: `1px solid ${RED}`,
-            boxShadow: '0 14px 34px rgba(0,0,0,0.65)',
-            zIndex: 20,
-            pointerEvents: 'none',
-            ...popStyle,
+            position: 'fixed',
+            inset: 0,
+            zIndex: 200,
+            background: 'rgba(5,6,21,0.82)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
           }}
         >
-          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: RED, lineHeight: 1.1 }}>
-            {shownBar.name.toUpperCase()}
-          </div>
-          {shownBar.character && (
-            <div style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>inspired by {shownBar.character}</div>
-          )}
-          <div style={{ fontSize: 13, color: SOFT, lineHeight: 1.5, marginTop: 10 }}>{shownBar.short}</div>
-          <div style={{ fontSize: 12, color: MUTED, marginTop: 10, lineHeight: 1.5 }}>
-            <span style={{ color: TEXT }}>Strengths:</span> {shownBar.strengths.join(' · ')}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: 360,
+              maxHeight: '86vh',
+              overflowY: 'auto',
+              boxSizing: 'border-box',
+              padding: '22px 22px 20px',
+              background: '#0e1030',
+              border: `1px solid ${RED}`,
+              boxShadow: '0 24px 60px rgba(0,0,0,0.7)',
+            }}
+          >
+            <button
+              onClick={() => setPinned(null)}
+              aria-label="Close"
+              style={{ position: 'absolute', top: 8, right: 8, margin: 0, width: 'auto', padding: '6px 12px', fontSize: 16, lineHeight: 1, background: 'transparent', border: `1px solid ${LINE}`, color: TEXT }}
+            >
+              ✕
+            </button>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: RED, lineHeight: 1.1, paddingRight: 44 }}>
+              {shownBar.name.toUpperCase()}
+            </div>
+            {shownBar.character && (
+              <div style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>inspired by {shownBar.character}</div>
+            )}
+            <div style={{ fontSize: 14, color: SOFT, lineHeight: 1.55, marginTop: 12 }}>{shownBar.short}</div>
+            <div style={{ fontSize: 13, color: MUTED, marginTop: 12, lineHeight: 1.5 }}>
+              <span style={{ color: TEXT }}>Strengths:</span> {shownBar.strengths.join(' · ')}
+            </div>
           </div>
         </div>
       )}
@@ -189,8 +200,6 @@ function PersonalityChart({ bars, topCode, maxPx = 180 }) {
           return (
             <div
               key={b.code}
-              onMouseEnter={() => setHover(b.code)}
-              onMouseLeave={() => setHover(null)}
               onClick={() => setPinned((p) => (p === b.code ? null : b.code))}
               style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
             >
@@ -224,8 +233,6 @@ function PersonalityChart({ bars, topCode, maxPx = 180 }) {
           return (
             <div
               key={b.code}
-              onMouseEnter={() => setHover(b.code)}
-              onMouseLeave={() => setHover(null)}
               onClick={() => setPinned((p) => (p === b.code ? null : b.code))}
               style={{ flex: 1, minWidth: 0, textAlign: 'center', cursor: 'pointer' }}
             >
@@ -1999,7 +2006,7 @@ export default function Results() {
                     {matchTab === 'you' ? 'Your personality mix' : 'The room’s personality mix'}
                   </div>
                   <div style={{ fontSize: 12, color: MUTED, marginTop: 6 }}>
-                    Hover over a bar (or tap it) to read about that personality.
+                    Tap a bar to read about that personality.
                   </div>
                   <PersonalityChart bars={matchBars} topCode={matchTop.code} />
                   {(() => {
