@@ -22,6 +22,7 @@ const PERSONALITIES = {
     name: 'The Relational Idealist',
     character: 'Charlie',
     image: '/characters/ri.png',
+    focus: '50% 25%',
     short: 'Loving, loyal, emotionally sensitive, and relationship-oriented. Wants to do the right thing but can be influenced by love and other people’s opinions.',
     tagline: 'The heart wants what the heart believes.',
     psychology: 'You love deeply, value loyalty, and believe in the goodness of people. But when love conflicts with your principles, your emotions can complicate your judgment.',
@@ -35,6 +36,7 @@ const PERSONALITIES = {
     name: 'The Evolving Self',
     character: 'Emma',
     image: '/characters/es.png',
+    focus: '50% 30%',
     short: 'Adaptable, spontaneous, and complex. Embraces reinvention, personal growth, and change but may struggle with vulnerability and revealing parts of their past.',
     tagline: 'You are not every version of yourself you’ve ever been.',
     psychology: 'You’re adaptable, complex, and constantly evolving. You embrace reinvention but may protect parts of your story out of fear of being misunderstood.',
@@ -48,6 +50,7 @@ const PERSONALITIES = {
     name: 'The Principled Perfectionist',
     character: 'Rachel',
     image: '/characters/pp.png',
+    focus: '50% 35%',
     short: 'Confident, direct, and guided by strong values. Has high standards and clear boundaries but can sometimes be rigid or judgmental.',
     tagline: 'Your standards are not up for negotiation.',
     psychology: 'You value integrity, accountability, and clear boundaries. You’re confident in your convictions, but your high expectations can sometimes leave little room for human complexity.',
@@ -61,6 +64,7 @@ const PERSONALITIES = {
     name: 'The Detached Observer',
     character: null,
     image: '/characters/do.png',
+    focus: '60% 20%',
     short: 'Analytical, curious, and independent. Prefers understanding people’s motivations before making judgments but can sometimes overthink or emotionally detach.',
     tagline: 'You notice what everyone else misses.',
     psychology: 'You’re curious, analytical, and fascinated by human behavior. You prefer understanding motivations over making quick judgments, but sometimes analysis creates emotional distance.',
@@ -128,7 +132,7 @@ function BarChart({ items, maxPx = 150, labelSize = 12, photoTop = false }) {
 
 // Bar chart of the four personalities. Hover (or tap) a bar for a pop-over about that type.
 // Every bar is red; the winning bar is filled with its character's picture.
-function PersonalityChart({ bars, topCode, maxPx = 230 }) {
+function PersonalityChart({ bars, topCode, maxPx = 320 }) {
   const [hover, setHover] = useState(null);
   const [pinned, setPinned] = useState(null);
   const shown = hover || pinned;
@@ -178,8 +182,8 @@ function PersonalityChart({ bars, topCode, maxPx = 230 }) {
 
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 }}>
         {bars.map((b) => {
-          const isTop = b.code === topCode && b.value > 0;
-          const h = Math.max(b.value > 0 ? 8 : 3, Math.round((b.value / max) * maxPx));
+          const isTop = b.value > 0 && b.value === max; // ties: every top bar shows its photo
+          const h = b.value > 0 ? Math.max(8, Math.round((b.value / max) * maxPx)) : 4; // winner is always the tallest, so its photo has room
           return (
             <div
               key={b.code}
@@ -188,14 +192,19 @@ function PersonalityChart({ bars, topCode, maxPx = 230 }) {
               onClick={() => setPinned((p) => (p === b.code ? null : b.code))}
               style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
             >
-              <div style={{ height: 24, fontSize: 15, fontWeight: isTop ? 700 : 400, color: isTop ? TEXT : MUTED }}>
+              <div style={{ height: 26, fontSize: 18, fontWeight: 700, color: isTop ? TEXT : SOFT }}>
                 {b.pct}%
               </div>
+              {/* photo is INSIDE the bar; the winner is clear, the others are tinted red */}
               <div
                 style={{
                   width: '100%',
                   height: h,
-                  background: isTop && b.image ? `url(${b.image}) center 25% / cover no-repeat, ${RED}` : RED,
+                  backgroundImage: isTop && b.image ? `url(${b.image})` : 'none',
+                  backgroundColor: RED,
+                  backgroundSize: 'cover',
+                  backgroundPosition: b.focus || 'center 30%',
+                  backgroundRepeat: 'no-repeat',
                   outline: isTop ? `2px solid ${TEXT}` : 'none',
                   opacity: shown && shown !== b.code ? 0.5 : 1,
                   transition: 'height 0.5s, opacity 0.15s',
@@ -815,21 +824,26 @@ async function drawRecap(canvas, d) {
 
   // character match
   heading('CHARACTER MATCH', 910);
-  let topImg = null;
-  if (d.groupTop && d.groupTop.image) {
-    topImg = await new Promise((resolve) => {
-      const im = new Image();
-      im.onload = () => resolve(im);
-      im.onerror = () => resolve(null);
-      im.src = d.groupTop.image;
-    });
-  }
   const max = Math.max(1, ...d.group.map((g) => g.value));
+  const topImgs = {};
+  await Promise.all(
+    d.group.map(async (g) => {
+      if (g.value > 0 && g.value === max && g.image) {
+        topImgs[g.code] = await new Promise((resolve) => {
+          const im = new Image();
+          im.onload = () => resolve(im);
+          im.onerror = () => resolve(null);
+          im.src = g.image;
+        });
+      }
+    })
+  );
   d.group.forEach((g, i) => {
     const v = g.value;
     const x = 210 + i * 180;
     const h = Math.max(v > 0 ? 10 : 4, Math.round((v / max) * 190));
-    const isTop = d.groupTop && i === d.groupTop.idx;
+    const isTop = v > 0 && v === max;
+    const topImg = topImgs[g.code];
     ctx.fillStyle = RED;
     ctx.fillRect(x, 1170 - h, 120, h);
     if (isTop && topImg) {
@@ -857,7 +871,7 @@ async function drawRecap(canvas, d) {
   });
   ctx.font = `32px ${SANS}`;
   ctx.fillStyle = MUTED;
-  ctx.fillText(d.groupTop ? `the room is most like: ${d.groupTop.name}` : 'no answers yet', cx, 1282);
+  ctx.fillText(d.groupTop ? `the room is most like: ${d.tied ? d.tied.join(' & ') : d.groupTop.name}` : 'no answers yet', cx, 1282);
   if (d.mineTop) {
     ctx.fillStyle = TEXT;
     ctx.fillText(`you are most like: ${d.mineTop.name}`, cx, 1328);
@@ -917,9 +931,12 @@ function RecapCard({ pulseAverage, pulseCount, groupBars, groupTop, myTop, mostC
   const dataKey = JSON.stringify({
     pulseAverage,
     pulseCount,
-    group: groupBars.map((b) => ({ code: b.code, value: b.value, pct: b.pct })),
+    group: groupBars.map((b) => ({ code: b.code, value: b.value, pct: b.pct, image: b.image, focus: b.focus })),
     groupTop: groupTop
       ? { idx: TYPE_ORDER.indexOf(groupTop.code), name: groupTop.name, image: groupTop.image }
+      : null,
+    tied: groupBars.filter((b) => b.value > 0 && b.value === Math.max(...groupBars.map((x) => x.value))).length > 1
+      ? groupBars.filter((b) => b.value === Math.max(...groupBars.map((x) => x.value))).map((b) => b.name)
       : null,
     mineTop: myTop ? { name: myTop.name } : null,
     conf: mostContested
@@ -1201,12 +1218,20 @@ export default function Results() {
                     Hover over a bar (or tap it) to read about that personality.
                   </div>
                   <PersonalityChart bars={matchBars} topCode={matchTop.code} />
-                  <div style={{ fontSize: 13, color: MUTED, marginTop: 16 }}>
-                    {matchTab === 'you' ? 'You are most like' : 'The room is most like'}{' '}
-                    <span style={{ color: TEXT, fontWeight: 700 }}>{matchTop.name}</span> — {matchTop.pct}%
+                  {(() => {
+                    const tops = matchBars.filter((b) => b.value > 0 && b.value === matchTop.value);
+                    return (
+                      <div style={{ fontSize: 13, color: MUTED, marginTop: 16 }}>
+                        {matchTab === 'you' ? 'You are' : 'The room is'} {tops.length > 1 ? 'equally' : 'most'} like{' '}
+                        <span style={{ color: TEXT, fontWeight: 700 }}>{tops.map((b) => b.name).join(' & ')}</span>
+                        {' '}— {matchTop.pct}%
+                      </div>
+                    );
+                  })()}
+                  <div style={{ fontSize: 11, color: MUTED, marginTop: 10 }}>
+                    A fun personality quiz, not a scientific measure of personality.
                   </div>
                 </div>
-                <PersonalityDetail p={matchTop} mode={matchTab} />
               </>
             )}
           </Section>
@@ -1227,7 +1252,6 @@ export default function Results() {
               </div>
               <div style={{ fontSize: 16, color: MUTED }}>/ 10</div>
             </div>
-            <BarChart items={pulseBars} maxPx={90} labelSize={11} />
             <div style={{ fontSize: 12, color: MUTED, marginTop: 16 }}>
               average rating · {pulseRatings.length} vote{pulseRatings.length === 1 ? '' : 's'}
             </div>
@@ -1298,7 +1322,21 @@ export default function Results() {
         </div>
 
         <div style={{ marginTop: 80, fontSize: 11, color: 'rgba(243,238,230,0.35)' }}>
-          The Deep Dive and The Discourse highlights are added manually closer to the event.
+          <p>
+  App created by Imogen &amp; Sophie
+  <br />
+  Contact us:{' '}
+  <a href="mailto:pointsofinterest.team@gmail.com">pointsofinterest.team@gmail.com</a>
+  <br />
+  Follow us on Instagram{' '}
+  <a
+    href="https://www.instagram.com/points.of.interest_/"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    @points.of.interest_
+  </a>
+</p>
         </div>
       </div>
     </div>
