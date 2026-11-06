@@ -920,6 +920,11 @@ async function drawRecap(canvas, d) {
   ctx.fillText('Friday, November 6th 2026 · Hamburg', cx, 335);
   rule(395);
 
+  // credit line at the bottom
+  ctx.fillStyle = T.muted;
+  ctx.font = `30px ${SANS}`;
+  ctx.fillText('a project created by @points.of.interest_', cx, 1895);
+
   // load every picture we need first
   const imgs = {};
   const wanted = [];
@@ -1345,23 +1350,11 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
     logShare('preview');
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!blobRef.current) return;
-    logShare('save');
-    const file = new File([blobRef.current], 'the-drama-recap.png', { type: 'image/png' });
-    const isTouch = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '');
-    // on phones the share sheet has "Save Image" and needs no download permission
-    if (isTouch && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file] });
-        setNote('Tip: choose "Save Image" in the list to put it in your photos.');
-        return;
-      } catch (e) {
-        if (e.name === 'AbortError') return;
-      }
-    }
     triggerDownload(blobRef.current, 'the-drama-recap.png');
-    setNote('If nothing happens, press and hold the picture above → Add to Photos.');
+    logShare('save');
+    setNote('Saved. If your phone asks to allow the download, tap Allow. Or press and hold the picture → Add to Photos.');
   }
 
   async function handleShare() {
@@ -1614,7 +1607,10 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
             <div style={{ padding: 14, overflowY: 'auto' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {preview && <img src={preview} alt="Your recap" style={{ width: '100%', maxHeight: '58vh', objectFit: 'contain', display: 'block', border: `1px solid ${LINE}`, background: '#000' }} />}
-              <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ marginTop: 14, textAlign: 'center', fontSize: 13, color: SOFT, lineHeight: 1.4 }}>
+                Please tag us <span style={{ color: RED }}>@points.of.interest_</span>
+              </div>
+              <div style={{ marginTop: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <button onClick={handleShare} style={{ background: RED, borderColor: RED, color: '#050615', fontWeight: 700 }}>SHARE</button>
                 <button onClick={handleSave} style={{ borderColor: LINE }}>SAVE AS PHOTO</button>
               </div>
