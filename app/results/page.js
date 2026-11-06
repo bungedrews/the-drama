@@ -372,6 +372,8 @@ function PhotoWall() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [openIndex, setOpenIndex] = useState(null);
+  const [showAll, setShowAll] = useState(false);
+  const PREVIEW_COUNT = 6; // 3 rows of 2
 
   async function fetchPhotos() {
     const { data } = await supabase
@@ -527,7 +529,7 @@ function PhotoWall() {
           padding: '8px 4px',
         }}
       >
-        {photos.map((p, i) => (
+        {(showAll ? photos : photos.slice(0, PREVIEW_COUNT)).map((p, i) => (
           <div
             key={p.id}
             className="polaroid"
@@ -575,6 +577,15 @@ function PhotoWall() {
             </div>
           ))}
       </div>
+
+      {photos.length > PREVIEW_COUNT && (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          style={{ marginTop: 18, width: 'auto', padding: '10px 18px', fontSize: 14 }}
+        >
+          {showAll ? 'SEE LESS' : `… SEE ALL ${photos.length} SNAPS`}
+        </button>
+      )}
 
       {/* lightbox: just the photo, ready to save */}
       {current && (
