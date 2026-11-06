@@ -15,6 +15,8 @@ const BAR_IDLE = '#2b3070';
 // ====================== PERSONALITY TYPES ======================
 // Put the pictures in your project's  public/characters/  folder as ri.jpg, es.jpg, pp.jpg, do.jpg.
 // (A missing picture is fine: that bar just stays plain red.)
+const EYEBROW = { fontFamily: "'Bebas Neue', sans-serif", fontStyle: 'normal', fontSize: 17, letterSpacing: 2, color: SOFT };
+
 const TYPE_ORDER = ['RI', 'ES', 'PP', 'DO'];
 
 const PERSONALITIES = {
@@ -132,7 +134,7 @@ function BarChart({ items, maxPx = 150, labelSize = 12, photoTop = false }) {
 
 // Bar chart of the four personalities. Hover (or tap) a bar for a pop-over about that type.
 // Every bar is red; the winning bar is filled with its character's picture.
-function PersonalityChart({ bars, topCode, maxPx = 320 }) {
+function PersonalityChart({ bars, topCode, maxPx = 180 }) {
   const [hover, setHover] = useState(null);
   const [pinned, setPinned] = useState(null);
   const shown = hover || pinned;
@@ -250,7 +252,7 @@ function PersonalityDetail({ p, mode }) {
       <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 56, lineHeight: 1.05, color: RED, marginTop: 8 }}>
         {p.name.toUpperCase()}
       </div>
-      <div style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 32, color: TEXT, marginTop: 6 }}>
+      <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color: TEXT, marginTop: 6 }}>
         {p.tagline}
       </div>
 
@@ -472,8 +474,8 @@ function PhotoWall() {
         .polaroid:hover { transform: rotate(0deg) scale(1.05) !important; z-index: 2; box-shadow: 0 14px 30px rgba(0,0,0,.6) !important; }
       `}</style>
 
-      <div className="eyebrow">The Snaps</div>
-      <div style={{ marginTop: 8, fontFamily: "'Pinyon Script', cursive", fontSize: 44, color: TEXT }}>
+      <div className="eyebrow" style={EYEBROW}>The Snaps</div>
+      <div style={{ marginTop: 8, fontFamily: "'Bebas Neue', sans-serif", fontSize: 52, lineHeight: 1.05, letterSpacing: 1, color: RED }}>
         Snaps from the night
       </div>
 
@@ -629,6 +631,7 @@ function Takeaways() {
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [sent, setSent] = useState(false);
 
   async function fetchItems() {
     const { data } = await supabase
@@ -670,6 +673,7 @@ function Takeaways() {
       return;
     }
     setText('');
+    setSent(true);
     fetchItems();
   }
 
@@ -678,12 +682,13 @@ function Takeaways() {
 
   return (
     <section>
-      <div className="eyebrow">The Takeaways</div>
-      <div style={{ marginTop: 8, fontFamily: "'Pinyon Script', cursive", fontSize: 44, color: TEXT }}>
-        What we're taking home
-      </div>
-
-      {/* from the hosts */}
+      {/* from the hosts (only shown when the hosts have added some) */}
+      {hostItems.length > 0 && (
+        <div style={{ marginBottom: 64 }}>
+          <div className="eyebrow" style={EYEBROW}>The Takeaways</div>
+          <div style={{ marginTop: 8, fontFamily: "'Bebas Neue', sans-serif", fontSize: 52, lineHeight: 1.05, letterSpacing: 1, color: RED }}>
+            What we're taking home
+          </div>
       <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 22 }}>
         {hostItems.map((item, i) => (
           <div key={item.id} style={{ display: 'flex', gap: 18, alignItems: 'baseline' }}>
@@ -697,11 +702,19 @@ function Takeaways() {
         ))}
       </div>
 
+        </div>
+      )}
+
+      <div className="eyebrow" style={EYEBROW}>Feedback</div>
+      <div style={{ marginTop: 8, fontFamily: "'Bebas Neue', sans-serif", fontSize: 52, lineHeight: 1.05, letterSpacing: 1, color: RED }}>
+        Give us feedback
+      </div>
+
       {/* from the room */}
-      <div style={{ marginTop: 52, borderTop: `1px solid ${LINE}`, paddingTop: 22 }}>
-        <div className="label" style={{ fontSize: 15 }}>FROM THE ROOM</div>
+      <div>
+        <div className="label" style={{ fontSize: 15 }}></div>
         <div style={{ marginTop: 6, fontSize: 13, color: MUTED }}>
-          Add your own takeaway, it's shared with everyone.
+          Leave us a comment: what did you like, what should we do differently next time? Or send us an Email or DM :)
         </div>
 
         <div style={{ marginTop: 18, maxWidth: 620, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -709,8 +722,8 @@ function Takeaways() {
             value={text}
             maxLength={MAX}
             rows={3}
-            placeholder="My takeaway from tonight…"
-            onChange={(e) => setText(e.target.value)}
+            placeholder="Your comment…"
+            onChange={(e) => { setText(e.target.value); setSent(false); }}
             style={{ ...fieldStyle, resize: 'vertical' }}
           />
           <input
@@ -726,7 +739,7 @@ function Takeaways() {
               onClick={handleSubmit}
               style={{ width: 'auto', padding: '11px 18px', fontSize: 14 }}
             >
-              {saving ? 'SHARING…' : 'SHARE TAKEAWAY'}
+              {saving ? 'SENDING…' : 'POST COMMENT'}
             </button>
             <span style={{ fontSize: 11, color: MUTED }}>{text.length} / {MAX}</span>
           </div>
@@ -748,7 +761,7 @@ function Takeaways() {
   );
 }
 
-// ====================== RECAP CARD (save / share) ======================
+// ====================== RECAP HELPERS ======================
 function wrapText(ctx, text, maxWidth) {
   const words = text.split(' ');
   const lines = [];
@@ -766,28 +779,96 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
-// Draws the 1080x1920 (Instagram story size) summary image.
+// ====================== RECAP BUILDER (make your own shareable) ======================
+// Guests start with a blank canvas and add the results they want with the + buttons.
+const THEMES = {
+  midnight: { label: 'Midnight', bg: '#050615', accent: '#FD513B', text: '#f3eee6', muted: 'rgba(243,238,230,0.5)', line: '#232850' },
+  noir: { label: 'Noir', bg: '#000000', accent: '#f3eee6', text: '#f3eee6', muted: 'rgba(243,238,230,0.5)', line: '#2a2a2a' },
+  flame: { label: 'Flame', bg: '#FD513B', accent: '#050615', text: '#050615', muted: 'rgba(5,6,21,0.65)', line: 'rgba(5,6,21,0.35)' },
+};
+
+const BLOCK_TYPES = {
+  pulse: { label: 'Group film rating', h: 330 },
+  matchYou: { label: 'My character match', h: 480 },
+  matchGroup: { label: 'The room’s character match', h: 480 },
+  confession: { label: 'Confessions & red flags', h: 560 },
+  snaps: { label: 'Snaps from the night', h: 400 },
+  poster: { label: 'Film poster', h: 700 },
+  text: { label: 'My own words', h: 200 },
+};
+const CANVAS_TOP = 410;
+const CANVAS_BOTTOM = 1880;
+const CANVAS_ROOM = CANVAS_BOTTOM - CANVAS_TOP - 20;
+const MAX_SNAPS = 5;
+const POSTER_URL = '/poster.jpg'; // put the film poster at public/poster.jpg
+// the snaps block grows to two rows when there are 4 or 5 pictures
+const blockH = (type, snapCount = 0) => (type === 'snaps' && snapCount > 3 ? 600 : BLOCK_TYPES[type].h);
+
+// fonts guests can pick for "my own words"
+const TEXT_FONTS = {
+  script: { label: 'Script', css: "'Pinyon Script', cursive", canvas: '"Pinyon Script"', size: 62, style: '', line: 76 },
+  drama: { label: 'THE DRAMA', css: "'Bebas Neue', sans-serif", canvas: '"Bebas Neue"', size: 76, style: '', line: 80 },
+  serif: { label: 'Serif', css: "'Cormorant Garamond', serif", canvas: '"Cormorant Garamond"', size: 60, style: 'italic ', line: 70 },
+  classic: { label: 'Classic', css: "'EB Garamond', serif", canvas: '"EB Garamond"', size: 54, style: '', line: 68 },
+  plain: { label: 'Plain', css: 'Helvetica, Arial, sans-serif', canvas: 'Helvetica, Arial, sans-serif', size: 46, style: 'bold ', line: 62 },
+};
+
+async function loadImg(url) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const obj = URL.createObjectURL(blob);
+    return await new Promise((resolve) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => resolve(null);
+      im.src = obj;
+    });
+  } catch (e) {
+    return null;
+  }
+}
+
+function drawCover(ctx, im, x, y, w, h, focus) {
+  const [fx, fy] = String(focus || '50% 30%')
+    .split(' ')
+    .map((v) => parseFloat(v) / 100);
+  const s = Math.max(w / im.width, h / im.height);
+  const dw = im.width * s;
+  const dh = im.height * s;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.drawImage(im, x + (w - dw) * (fx || 0.5), y + (h - dh) * (fy || 0.3), dw, dh);
+  ctx.restore();
+}
+
+// Draws the 1080x1920 (Instagram story size) image from the chosen blocks.
 async function drawRecap(canvas, d) {
   try {
     await Promise.all([
       document.fonts.load('170px "Bebas Neue"'),
       document.fonts.load('80px "Pinyon Script"'),
       document.fonts.load('bold 40px Helvetica'),
+      document.fonts.load('italic 60px "Cormorant Garamond"'),
+      document.fonts.load('54px "EB Garamond"'),
     ]);
   } catch (e) {}
 
+  const T = THEMES[d.themeId] || THEMES.midnight;
   canvas.width = 1080;
   canvas.height = 1920;
   const ctx = canvas.getContext('2d');
   const cx = 540;
   const SANS = 'Helvetica, Arial, sans-serif';
 
-  ctx.fillStyle = '#050615';
+  ctx.fillStyle = T.bg;
   ctx.fillRect(0, 0, 1080, 1920);
   ctx.textAlign = 'center';
 
   const rule = (y) => {
-    ctx.strokeStyle = LINE;
+    ctx.strokeStyle = T.line;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(90, y);
@@ -795,183 +876,388 @@ async function drawRecap(canvas, d) {
     ctx.stroke();
   };
   const heading = (t, y) => {
-    ctx.fillStyle = RED;
+    ctx.fillStyle = T.accent;
     ctx.font = '48px "Bebas Neue"';
     ctx.fillText(t, cx, y);
   };
 
-  // title
-  ctx.fillStyle = RED;
+  // title (always there)
+  ctx.fillStyle = T.accent;
   ctx.font = '170px "Bebas Neue"';
   ctx.fillText('THE DRAMA', cx, 190);
-  ctx.fillStyle = TEXT;
+  ctx.fillStyle = T.text;
   ctx.font = '80px "Pinyon Script"';
   ctx.fillText('film club', cx, 275);
-  ctx.fillStyle = MUTED;
+  ctx.fillStyle = T.muted;
   ctx.font = `30px ${SANS}`;
   ctx.fillText('Friday, November 6th 2026 · Hamburg', cx, 335);
   rule(395);
 
-  // film pulse
-  heading('FILM PULSE CHECK', 470);
-  ctx.fillStyle = RED;
-  ctx.font = '300px "Bebas Neue"';
-  ctx.fillText(d.pulseAverage, cx, 720);
-  ctx.fillStyle = MUTED;
-  ctx.font = `32px ${SANS}`;
-  ctx.fillText(`average rating out of 10 · ${d.pulseCount} vote${d.pulseCount === 1 ? '' : 's'}`, cx, 780);
-  rule(840);
-
-  // character match
-  heading('CHARACTER MATCH', 910);
-  const max = Math.max(1, ...d.group.map((g) => g.value));
-  const topImgs = {};
-  await Promise.all(
-    d.group.map(async (g) => {
-      if (g.value > 0 && g.value === max && g.image) {
-        topImgs[g.code] = await new Promise((resolve) => {
-          const im = new Image();
-          im.onload = () => resolve(im);
-          im.onerror = () => resolve(null);
-          im.src = g.image;
-        });
-      }
-    })
-  );
-  d.group.forEach((g, i) => {
-    const v = g.value;
-    const x = 210 + i * 180;
-    const h = Math.max(v > 0 ? 10 : 4, Math.round((v / max) * 190));
-    const isTop = v > 0 && v === max;
-    const topImg = topImgs[g.code];
-    ctx.fillStyle = RED;
-    ctx.fillRect(x, 1170 - h, 120, h);
-    if (isTop && topImg) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(x, 1170 - h, 120, h);
-      ctx.clip();
-      const scale = Math.max(120 / topImg.width, h / topImg.height);
-      const dw = topImg.width * scale;
-      const dh = topImg.height * scale;
-      ctx.drawImage(topImg, x + (120 - dw) / 2, 1170 - h + (h - dh) * 0.25, dw, dh);
-      ctx.restore();
-    }
-    if (isTop) {
-      ctx.strokeStyle = TEXT;
-      ctx.lineWidth = 4;
-      ctx.strokeRect(x, 1170 - h, 120, h);
-    }
-    ctx.fillStyle = TEXT;
-    ctx.font = `bold 34px ${SANS}`;
-    ctx.fillText(`${g.pct}%`, x + 60, 1170 - h - 14);
-    ctx.fillStyle = isTop ? RED : MUTED;
-    ctx.font = '46px "Bebas Neue"';
-    ctx.fillText(g.code, x + 60, 1224);
+  // load every picture we need first
+  const imgs = {};
+  const wanted = [];
+  [d.myBars, d.groupBars].forEach((bars) => {
+    const max = Math.max(...bars.map((b) => b.value));
+    bars.forEach((b) => { if (b.value > 0 && b.value === max && b.image) wanted.push(b.image); });
   });
-  ctx.font = `32px ${SANS}`;
-  ctx.fillStyle = MUTED;
-  ctx.fillText(d.groupTop ? `the room is most like: ${d.tied ? d.tied.join(' & ') : d.groupTop.name}` : 'no answers yet', cx, 1282);
-  if (d.mineTop) {
-    ctx.fillStyle = TEXT;
-    ctx.fillText(`you are most like: ${d.mineTop.name}`, cx, 1328);
-  }
-  rule(1380);
+  (d.snapUrls || []).forEach((u) => wanted.push(u));
+  if ((d.blocks || []).includes('poster')) wanted.push(POSTER_URL);
+  await Promise.all([...new Set(wanted)].map(async (u) => { imgs[u] = await loadImg(u); }));
 
-  // most contested confession
-  heading('MOST CONTESTED CONFESSION', 1450);
-  if (d.conf) {
-    ctx.fillStyle = TEXT;
-    ctx.font = `bold 42px ${SANS}`;
-    let lines = wrapText(ctx, `"${d.conf.text}"`, 880);
-    if (lines.length > 3) {
-      lines = lines.slice(0, 3);
-      lines[2] = lines[2].replace(/\s*\S*$/, '') + '…';
-    }
-    lines.forEach((l, i) => ctx.fillText(l, cx, 1525 + i * 58));
-    const barY = 1525 + (lines.length - 1) * 58 + 40;
-
-    const segs = [
-      ['green', 'Green', '#4fbf8a'],
-      ['yellow', 'Yellow', '#e8b84a'],
-      ['red', 'Red', RED],
-    ];
-    let x = 90;
-    segs.forEach(([k, , color]) => {
-      const w = 900 * (d.conf[k] / d.conf.total);
-      ctx.fillStyle = color;
-      ctx.fillRect(x, barY, w, 38);
-      x += w;
-    });
-    ctx.font = `34px ${SANS}`;
-    segs.forEach(([k, name, color], i) => {
-      ctx.fillStyle = color;
-      ctx.fillText(`${name} ${Math.round((d.conf[k] / d.conf.total) * 100)}%`, 240 + i * 300, barY + 105);
-    });
-    ctx.fillStyle = MUTED;
-    ctx.font = `28px ${SANS}`;
-    ctx.fillText(`${d.conf.total} votes`, cx, barY + 160);
-  } else {
-    ctx.fillStyle = MUTED;
+  // ---- block painters (y = top of the block) ----
+  const paintPulse = (y) => {
+    heading('GROUP FILM RATING', y + 50);
+    ctx.fillStyle = T.accent;
+    ctx.font = '260px "Bebas Neue"';
+    ctx.fillText(d.pulseAverage, cx, y + 255);
+    ctx.fillStyle = T.muted;
     ctx.font = `32px ${SANS}`;
-    ctx.fillText('no votes yet', cx, 1525);
+    ctx.fillText(`average rating out of 10 · ${d.pulseCount} vote${d.pulseCount === 1 ? '' : 's'}`, cx, y + 310);
+  };
+
+  const paintMatch = (y, bars, who) => {
+    heading(`CHARACTER MATCH · ${who}`, y + 50);
+    if (!bars.some((b) => b.value > 0)) {
+      ctx.fillStyle = T.muted;
+      ctx.font = `32px ${SANS}`;
+      ctx.fillText('no answers yet', cx, y + 260);
+      return;
+    }
+    const max = Math.max(...bars.map((b) => b.value));
+    const base = y + 385;
+    const bw = 150;
+    const step = 210;
+    const x0 = 150;
+    bars.forEach((b, i) => {
+      const x = x0 + i * step;
+      const h = b.value > 0 ? Math.max(10, Math.round((b.value / max) * 250)) : 4;
+      const isTop = b.value > 0 && b.value === max;
+      ctx.fillStyle = T.accent;
+      ctx.fillRect(x, base - h, bw, h);
+      if (isTop && imgs[b.image]) drawCover(ctx, imgs[b.image], x, base - h, bw, h, b.focus);
+      if (isTop) {
+        ctx.strokeStyle = T.text;
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x, base - h, bw, h);
+      }
+      ctx.fillStyle = T.text;
+      ctx.font = `bold 34px ${SANS}`;
+      ctx.fillText(`${b.pct}%`, x + bw / 2, base - h - 14);
+      ctx.fillStyle = isTop ? T.text : T.muted;
+      ctx.font = '46px "Bebas Neue"';
+      ctx.fillText(b.code, x + bw / 2, base + 54);
+    });
+    const tops = bars.filter((b) => b.value === max);
+    ctx.fillStyle = T.muted;
+    ctx.font = `32px ${SANS}`;
+    ctx.fillText(
+      tops.length > 1
+        ? `equally like ${tops.map((b) => b.code).join(' · ')}`
+        : `${who === 'YOU' ? 'you are' : 'the room is'} most like ${tops[0].name}`,
+      cx,
+      y + 472
+    );
+  };
+
+  const paintConfession = (y) => {
+    heading('CONFESSIONS & RED FLAGS', y + 50);
+    const list = (d.confs || []).filter((c) => c.total > 0);
+    if (!list.length) {
+      ctx.fillStyle = T.muted;
+      ctx.font = `32px ${SANS}`;
+      ctx.fillText('no votes yet', cx, y + 240);
+      return;
+    }
+    const flags = [
+      { id: 'green', label: 'Green', color: '#4fbf8a' },
+      { id: 'yellow', label: 'Yellow', color: '#e8b84a' },
+      { id: 'red', label: 'Red', color: '#d8321b' },
+    ];
+    list.slice(0, 3).forEach((c, i) => {
+      const top = y + 105 + i * 150;
+      ctx.fillStyle = T.text;
+      ctx.font = `bold 25px ${SANS}`;
+      let lines = wrapText(ctx, `"${c.text}"`, 880);
+      if (lines.length > 2) lines = [lines[0], lines[1].replace(/\s*\S*$/, '') + '…"'];
+      lines.forEach((l, k) => ctx.fillText(l, cx, top + k * 32));
+      const by = top + 32 * lines.length + 8;
+      const best = Math.max(c.green, c.yellow, c.red);
+      let bx = 90;
+      flags.forEach((f) => {
+        const w = (c[f.id] / c.total) * 900;
+        ctx.globalAlpha = c[f.id] === best ? 1 : 0.3;
+        ctx.fillStyle = f.color;
+        ctx.fillRect(bx, by, w, 14);
+        bx += w;
+      });
+      ctx.globalAlpha = 1;
+      flags.forEach((f, k) => {
+        const win = c[f.id] === best;
+        const x = 270 + k * 270;
+        ctx.globalAlpha = win ? 1 : 0.4;
+        ctx.fillStyle = f.color;
+        ctx.beginPath();
+        ctx.arc(x - 70, by + 36, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = T.text;
+        ctx.textAlign = 'left';
+        ctx.font = `${win ? 'bold ' : ''}24px ${SANS}`;
+        ctx.fillText(`${f.label} ${Math.round((c[f.id] / c.total) * 100)}%`, x - 56, by + 44);
+        ctx.textAlign = 'center';
+        ctx.globalAlpha = 1;
+      });
+    });
+  };
+
+  const paintSnaps = (y) => {
+    heading('SNAPS FROM THE NIGHT', y + 50);
+    const list = (d.snapUrls || []).filter((u) => imgs[u]).slice(0, MAX_SNAPS);
+    if (!list.length) {
+      ctx.fillStyle = T.muted;
+      ctx.font = `32px ${SANS}`;
+      ctx.fillText('no snaps yet', cx, y + 220);
+      return;
+    }
+    const big = list.length <= 3;
+    const w = big ? 260 : 210;
+    const ph = big ? 300 : 244; // polaroid height
+    const gap = 30;
+    const rows = big ? [list] : [list.slice(0, Math.ceil(list.length / 2)), list.slice(Math.ceil(list.length / 2))];
+    const angles = [-0.05, 0.035, -0.03, 0.04, -0.04];
+    let n = 0;
+    rows.forEach((row, r) => {
+      const total = row.length * w + (row.length - 1) * gap;
+      row.forEach((u, i) => {
+        const x = (1080 - total) / 2 + i * (w + gap);
+        const top = y + 95 + r * (ph + 14);
+        ctx.save();
+        ctx.translate(x + w / 2, top + ph / 2);
+        ctx.rotate(angles[n++ % angles.length]);
+        ctx.shadowColor = 'rgba(0,0,0,0.45)';
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 8;
+        ctx.fillStyle = '#f6f1e7';
+        ctx.fillRect(-w / 2, -ph / 2, w, ph);
+        ctx.shadowColor = 'transparent';
+        drawCover(ctx, imgs[u], -w / 2 + 16, -ph / 2 + 16, w - 32, w - 32, '50% 40%');
+        ctx.restore();
+      });
+    });
+  };
+
+  const paintPoster = (y) => {
+    const im = imgs[POSTER_URL];
+    if (!im) {
+      ctx.fillStyle = T.muted;
+      ctx.font = `30px ${SANS}`;
+      ctx.fillText('add the poster at public/poster.jpg', cx, y + 340);
+      return;
+    }
+    const sc = Math.min(520 / im.width, 640 / im.height);
+    const w = Math.round(im.width * sc);
+    const h = Math.round(im.height * sc);
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 30;
+    ctx.shadowOffsetY = 10;
+    ctx.drawImage(im, (1080 - w) / 2, y + 30, w, h);
+    ctx.restore();
+  };
+
+  const paintText = (y) => {
+    const F = TEXT_FONTS[d.fontId] || TEXT_FONTS.script;
+    const txt = (d.text || '').trim();
+    if (!txt) {
+      ctx.fillStyle = T.muted;
+      ctx.font = `32px ${SANS}`;
+      ctx.fillText('write something…', cx, y + 110);
+      return;
+    }
+    ctx.fillStyle = T.text;
+    ctx.font = `${F.style}${F.size}px ${F.canvas}`;
+    wrapText(ctx, txt, 880)
+      .slice(0, 3)
+      .forEach((l, i) => ctx.fillText(l, cx, y + 70 + i * F.line));
+  };
+
+  // ---- lay the chosen blocks out down the canvas ----
+  const blocks = d.blocks || [];
+  if (!blocks.length) {
+    ctx.strokeStyle = T.line;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([16, 14]);
+    ctx.strokeRect(90, 470, 900, 1300);
+    ctx.setLineDash([]);
+    ctx.fillStyle = T.accent;
+    ctx.font = '260px "Bebas Neue"';
+    ctx.fillText('+', cx, 1090);
+    ctx.fillStyle = T.muted;
+    ctx.font = `34px ${SANS}`;
+    ctx.fillText('add your results from the night', cx, 1180);
+    return;
   }
 
-  ctx.fillStyle = MUTED;
-  ctx.font = `28px ${SANS}`;
-  ctx.fillText(window.location.host, cx, 1885);
+  const snapN = (d.snapUrls || []).length;
+  const sum = blocks.reduce((s, b) => s + blockH(b, snapN), 0);
+  const gap = Math.max(0, Math.min(70, (CANVAS_BOTTOM - CANVAS_TOP - sum) / (blocks.length + 1)));
+  let y = CANVAS_TOP + gap;
+  blocks.forEach((type, i) => {
+    if (type === 'pulse') paintPulse(y);
+    if (type === 'matchYou') paintMatch(y, d.myBars, 'YOU');
+    if (type === 'matchGroup') paintMatch(y, d.groupBars, 'THE GROUP');
+    if (type === 'confession') paintConfession(y);
+    if (type === 'snaps') paintSnaps(y);
+    if (type === 'poster') paintPoster(y);
+    if (type === 'text') paintText(y);
+    y += blockH(type, snapN);
+    if (i < blocks.length - 1 && gap > 24) rule(y + gap / 2);
+    y += gap;
+  });
 }
 
-function RecapCard({ pulseAverage, pulseCount, groupBars, groupTop, myTop, mostContested }) {
+const smallBtn = {
+  width: 'auto',
+  margin: 0,
+  padding: '4px 10px',
+  fontSize: 12,
+  borderColor: LINE,
+};
+
+function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionStats }) {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const blobRef = useRef(null);
   const [preview, setPreview] = useState(null);
   const [note, setNote] = useState(null);
+  const [blocks, setBlocks] = useState([]);
+  const [themeId, setThemeId] = useState('midnight');
+  const [text, setText] = useState('');
+  const [photos, setPhotos] = useState([]);
+  const [picked, setPicked] = useState([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [fontId, setFontId] = useState('script');
 
+  useEffect(() => {
+    supabase
+      .from('event_photos')
+      .select('id, image_url')
+      .eq('event_id', EVENT_ID)
+      .order('created_at', { ascending: false })
+      .limit(80)
+      .then(({ data }) => setPhotos(data || []));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const snapCount = blocks.includes('snaps') ? (picked.length || Math.min(3, photos.length)) : 0;
+  const used = blocks.reduce((s, b) => s + blockH(b, snapCount), 0);
+  const fits = (type) => used + blockH(type, snapCount) <= CANVAS_ROOM;
+
+  const add = (type) => {
+    if (blocks.includes(type) || !fits(type)) return;
+    setBlocks([...blocks, type]);
+  };
+  const remove = (type) => setBlocks(blocks.filter((b) => b !== type));
+  const move = (i, dir) => {
+    const j = i + dir;
+    if (j < 0 || j >= blocks.length) return;
+    const next = [...blocks];
+    [next[i], next[j]] = [next[j], next[i]];
+    setBlocks(next);
+  };
+  const togglePhoto = (id) => {
+    if (picked.includes(id)) {
+      setPicked(picked.filter((x) => x !== id));
+      return;
+    }
+    if (picked.length >= MAX_SNAPS) return;
+    const others = blocks.filter((b) => b !== 'snaps').reduce((s, b) => s + blockH(b, 0), 0);
+    if (others + blockH('snaps', picked.length + 1) > CANVAS_ROOM) {
+      setNote('Not enough room for more snaps. Remove another block first.');
+      return;
+    }
+    setNote(null);
+    setPicked([...picked, id]);
+  };
+
+  const snapUrls = blocks.includes('snaps')
+    ? (picked.length ? picked.map((id) => photos.find((p) => p.id === id)).filter(Boolean) : photos.slice(0, 3)).map((p) => p.image_url)
+    : [];
+
+  const slim = (bars) => bars.map((b) => ({ code: b.code, name: b.name, value: b.value, pct: b.pct, image: b.image, focus: b.focus }));
   const dataKey = JSON.stringify({
+    blocks,
+    themeId,
+    text,
+    fontId,
+    snapUrls,
     pulseAverage,
     pulseCount,
-    group: groupBars.map((b) => ({ code: b.code, value: b.value, pct: b.pct, image: b.image, focus: b.focus })),
-    groupTop: groupTop
-      ? { idx: TYPE_ORDER.indexOf(groupTop.code), name: groupTop.name, image: groupTop.image }
-      : null,
-    tied: groupBars.filter((b) => b.value > 0 && b.value === Math.max(...groupBars.map((x) => x.value))).length > 1
-      ? groupBars.filter((b) => b.value === Math.max(...groupBars.map((x) => x.value))).map((b) => b.name)
-      : null,
-    mineTop: myTop ? { name: myTop.name } : null,
-    conf: mostContested
-      ? {
-          text: mostContested.scenario.text,
-          green: mostContested.counts.green,
-          yellow: mostContested.counts.yellow,
-          red: mostContested.counts.red,
-          total: mostContested.total,
-        }
-      : null,
+    myBars: slim(myBars),
+    groupBars: slim(groupBars),
+    confs: confessionStats.map((c) => ({
+      text: c.scenario.text,
+      green: c.counts.green,
+      yellow: c.counts.yellow,
+      red: c.counts.red,
+      total: c.total,
+    })),
   });
 
-  // redraw (slightly debounced) whenever the live numbers change
+  // redraw (slightly debounced) whenever something changes
   useEffect(() => {
     let cancelled = false;
     const timer = setTimeout(() => {
       const canvas = document.createElement('canvas');
       drawRecap(canvas, JSON.parse(dataKey)).then(() => {
         if (cancelled) return;
-        setPreview(canvas.toDataURL('image/png'));
-        canvas.toBlob((b) => { blobRef.current = b; }, 'image/png');
+        try {
+          setPreview(canvas.toDataURL('image/png'));
+          canvas.toBlob((b) => { blobRef.current = b; }, 'image/png');
+        } catch (e) {
+          setNote('Could not build the image — try removing the snaps block.');
+        }
       });
-    }, 400);
+    }, 350);
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
   }, [dataKey]);
 
-  // counts button taps (not actual posts — Instagram doesn't tell us that)
+  // Saves the finished recap anonymously (small picture + which blocks/look/font were used).
+  // No name and no account id is stored. Counts button taps, not real Instagram posts.
+  const loggedRef = useRef(new Set());
   async function logShare(kind) {
     try {
-      const attendee = localStorage.getItem('attendee_id');
-      await supabase.from('share_events').insert({ event_id: EVENT_ID, attendee_id: attendee, kind });
+      const key = `${kind}|${dataKey}`;
+      if (loggedRef.current.has(key)) return; // same recap + same action: count it once
+      loggedRef.current.add(key);
+      const cfg = JSON.parse(dataKey);
+
+      let imageUrl = null;
+      if (blobRef.current) {
+        const bmp = await createImageBitmap(blobRef.current);
+        const c = document.createElement('canvas');
+        c.width = 540;
+        c.height = 960;
+        c.getContext('2d').drawImage(bmp, 0, 0, 540, 960);
+        const small = await new Promise((resolve) => c.toBlob(resolve, 'image/jpeg', 0.8));
+        const path = `${EVENT_ID}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        const { error: upError } = await supabase.storage
+          .from('event-recaps')
+          .upload(path, small, { contentType: 'image/jpeg' });
+        if (!upError) imageUrl = supabase.storage.from('event-recaps').getPublicUrl(path).data.publicUrl;
+      }
+
+      await supabase.from('recap_results').insert({
+        event_id: EVENT_ID,
+        action: kind,
+        blocks: cfg.blocks,
+        theme: cfg.themeId,
+        font: cfg.blocks.includes('text') ? cfg.fontId : null,
+        snap_count: cfg.snapUrls.length,
+        has_text: !!(cfg.blocks.includes('text') && cfg.text.trim()),
+        image_url: imageUrl,
+      });
     } catch (e) {}
   }
 
@@ -979,7 +1265,7 @@ function RecapCard({ pulseAverage, pulseCount, groupBars, groupTop, myTop, mostC
     if (!blobRef.current) return;
     triggerDownload(blobRef.current, 'the-drama-recap.png');
     logShare('save');
-    setNote('Saved');
+    setNote('Saved. On iPhone you can also press and hold the image → Add to Photos.');
   }
 
   async function handleInstagram() {
@@ -991,7 +1277,7 @@ function RecapCard({ pulseAverage, pulseCount, groupBars, groupTop, myTop, mostC
         await navigator.share({ files: [file], title: 'The Drama', text: 'My night at The Drama' });
         setNote(null);
       } catch (e) {
-        if (e.name !== 'AbortError') setNote('Could not open the share sheet — use "Save as photo" and post it from Instagram.');
+        if (e.name !== 'AbortError') setNote('Could not open the share sheet. Use "Save as photo" and post it from Instagram.');
       }
     } else {
       triggerDownload(blobRef.current, 'the-drama-recap.png');
@@ -999,18 +1285,42 @@ function RecapCard({ pulseAverage, pulseCount, groupBars, groupTop, myTop, mostC
     }
   }
 
+  const tile = (disabled) => ({
+    width: '100%',
+    margin: 0,
+    boxSizing: 'border-box',
+    border: `1px dashed ${disabled ? LINE : RED}`,
+    background: 'transparent',
+    color: disabled ? MUTED : TEXT,
+    padding: '12px 12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    textAlign: 'left',
+    fontFamily: 'Helvetica, Arial, sans-serif',
+    fontSize: 13,
+    letterSpacing: 0,
+    cursor: disabled ? 'default' : 'pointer',
+    opacity: disabled ? 0.45 : 1,
+  });
+
+  const sectionLabel = { fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 1, color: RED };
+
   return (
     <section>
-      <div className="eyebrow">The Recap</div>
-      <div style={{ marginTop: 8, fontFamily: "'Pinyon Script', cursive", fontSize: 44, color: TEXT }}>
-        The night in numbers
+      <div className="eyebrow" style={EYEBROW}>Your Recap</div>
+      <div style={{ marginTop: 8, fontFamily: "'Bebas Neue', sans-serif", fontSize: 52, lineHeight: 1.05, letterSpacing: 1, color: RED }}>
+        Make your own
+      </div>
+      <div style={{ marginTop: 8, fontSize: 13, color: MUTED }}>
+        Start with a blank canvas, add what you want to remember and share it.
       </div>
 
-      <div style={{ marginTop: 26, display: 'flex', gap: 36, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-        <div style={{ width: 270, flexShrink: 0, border: `1px solid ${LINE}`, background: '#0e1030' }}>
+      <div style={{ marginTop: 26, display: 'flex', gap: 40, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <div style={{ width: 300, flexShrink: 0, border: `1px solid ${LINE}`, background: '#0e1030' }}>
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview} alt="Recap of the night" style={{ width: '100%', display: 'block' }} />
+            <img src={preview} alt="Your recap" style={{ width: '100%', display: 'block' }} />
           ) : (
             <div style={{ aspectRatio: '9 / 16', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: MUTED }}>
               building your recap…
@@ -1018,16 +1328,297 @@ function RecapCard({ pulseAverage, pulseCount, groupBars, groupTop, myTop, mostC
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 320, flex: 1, minWidth: 230 }}>
-          <div style={{ fontSize: 14, color: SOFT, lineHeight: 1.5 }}>
-            A story-sized summary of tonight's results: the film rating, the Character Match
-            split and the most contested confession. It updates as votes come in.
+        <div style={{ flex: 1, minWidth: 250, maxWidth: 420 }}>
+          <div style={sectionLabel}>ADD TO YOUR RECAP</div>
+          <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10 }}>
+            {Object.keys(BLOCK_TYPES).map((type) => {
+              const disabled = blocks.includes(type) || !fits(type);
+              return (
+                <button key={type} disabled={false} onClick={() => add(type)} style={tile(disabled)}>
+                  <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, lineHeight: 1, color: disabled ? MUTED : RED }}>
+                    {blocks.includes(type) ? '✓' : '+'}
+                  </span>
+                  {BLOCK_TYPES[type].label}
+                </button>
+              );
+            })}
           </div>
-          <button onClick={handleInstagram} disabled={!preview}>POST TO INSTAGRAM</button>
-          <button onClick={handleSave} disabled={!preview} style={{ borderColor: LINE }}>SAVE AS PHOTO</button>
-          {note && <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{note}</div>}
+          {used > CANVAS_ROOM - 300 && (
+            <div style={{ marginTop: 8, fontSize: 11, color: MUTED }}>
+              The canvas is getting full. Remove something to add more.
+            </div>
+          )}
+
+          {blocks.length > 0 && (
+            <div style={{ marginTop: 26 }}>
+              <div style={sectionLabel}>YOUR LAYOUT</div>
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {blocks.map((type, i) => (
+                  <div
+                    key={type}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      border: `1px solid ${LINE}`,
+                      padding: '8px 10px',
+                      fontSize: 13,
+                      color: SOFT,
+                    }}
+                  >
+                    <span style={{ flex: 1 }}>{BLOCK_TYPES[type].label}</span>
+                    <button style={smallBtn} onClick={() => move(i, -1)} disabled={i === 0} aria-label="Move up">↑</button>
+                    <button style={smallBtn} onClick={() => move(i, 1)} disabled={i === blocks.length - 1} aria-label="Move down">↓</button>
+                    <button style={smallBtn} onClick={() => remove(type)} aria-label="Remove">✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {blocks.includes('text') && (
+            <div style={{ marginTop: 22 }}>
+              <div style={sectionLabel}>YOUR WORDS</div>
+              <textarea
+                value={text}
+                maxLength={110}
+                rows={2}
+                placeholder="A line to remember the night by…"
+                onChange={(e) => setText(e.target.value)}
+                style={{ ...fieldStyle, marginTop: 8, resize: 'none', fontFamily: TEXT_FONTS[fontId].css, fontSize: 18 }}
+              />
+              <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {Object.entries(TEXT_FONTS).map(([id, f]) => (
+                  <button
+                    key={id}
+                    onClick={() => setFontId(id)}
+                    style={{
+                      margin: 0,
+                      width: 'auto',
+                      padding: '7px 14px',
+                      fontSize: 18,
+                      letterSpacing: 0,
+                      fontFamily: f.css,
+                      fontStyle: f.style.includes('italic') ? 'italic' : 'normal',
+                      fontWeight: f.style.includes('bold') ? 700 : 400,
+                      border: `1px solid ${fontId === id ? RED : LINE}`,
+                      color: fontId === id ? TEXT : MUTED,
+                    }}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {blocks.includes('snaps') && (
+            <div style={{ marginTop: 22 }}>
+              <div style={sectionLabel}>YOUR SNAPS</div>
+              <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                {picked.map((id) => {
+                  const ph = photos.find((x) => x.id === id);
+                  return ph ? (
+                    <span
+                      key={id}
+                      style={{ width: 48, height: 48, backgroundImage: `url(${ph.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center', border: `1px solid ${LINE}` }}
+                    />
+                  ) : null;
+                })}
+                <button
+                  onClick={() => setPickerOpen(true)}
+                  style={{ margin: 0, width: 'auto', padding: '10px 16px', fontSize: 14 }}
+                >
+                  {picked.length ? `CHANGE SNAPS (${picked.length} / ${MAX_SNAPS})` : `CHOOSE SNAPS (UP TO ${MAX_SNAPS})`}
+                </button>
+              </div>
+              {!picked.length && photos.length > 0 && (
+                <div style={{ marginTop: 6, fontSize: 11, color: MUTED }}>Until you choose, your 3 newest snaps are used.</div>
+              )}
+            </div>
+          )}
+
+          <div style={{ marginTop: 26 }}>
+            <div style={sectionLabel}>LOOK</div>
+            <div style={{ marginTop: 8, display: 'flex', gap: 10 }}>
+              {Object.entries(THEMES).map(([id, t]) => (
+                <button
+                  key={id}
+                  onClick={() => setThemeId(id)}
+                  style={{
+                    margin: 0,
+                    width: 'auto',
+                    padding: '8px 14px',
+                    fontSize: 13,
+                    letterSpacing: 0,
+                    fontFamily: 'Helvetica, Arial, sans-serif',
+                    background: t.bg,
+                    color: t.accent,
+                    border: `2px solid ${themeId === id ? TEXT : LINE}`,
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <button onClick={handleInstagram} disabled={!preview || !blocks.length}>POST TO INSTAGRAM</button>
+            <button onClick={handleSave} disabled={!preview || !blocks.length} style={{ borderColor: LINE }}>SAVE AS PHOTO</button>
+            {note && <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5, marginTop: 8 }}>{note}</div>}
+          </div>
         </div>
       </div>
+
+      {pickerOpen && (
+        <div
+          onClick={() => setPickerOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 200,
+            background: 'rgba(5,6,21,0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 760,
+              maxHeight: '88vh',
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#0b0d28',
+              border: `1px solid ${LINE}`,
+              boxShadow: '0 24px 60px rgba(0,0,0,0.7)',
+            }}
+          >
+            <div style={{ padding: '18px 20px', borderBottom: `1px solid ${LINE}`, display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 1, color: RED, lineHeight: 1 }}>
+                  CHOOSE YOUR SNAPS
+                </div>
+                <div style={{ marginTop: 4, fontSize: 12, color: MUTED }}>
+                  Scroll and tap up to {MAX_SNAPS} pictures ({picked.length} / {MAX_SNAPS}). The numbers show the order.
+                </div>
+              </div>
+              <button onClick={() => setPickerOpen(false)} style={{ margin: 0, width: 'auto', padding: '10px 18px', fontSize: 14 }}>
+                DONE
+              </button>
+            </div>
+
+            <div style={{ padding: 16, overflowY: 'auto' }}>
+              {photos.length === 0 ? (
+                <div style={{ fontSize: 13, color: MUTED }}>No snaps uploaded yet.</div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 10 }}>
+                  {photos.map((p) => {
+                    const idx = picked.indexOf(p.id);
+                    const on = idx >= 0;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => togglePhoto(p.id)}
+                        aria-label="Pick this snap"
+                        style={{
+                          margin: 0,
+                          padding: 0,
+                          position: 'relative',
+                          width: '100%',
+                          aspectRatio: '1',
+                          border: `3px solid ${on ? RED : 'transparent'}`,
+                          backgroundImage: `url(${p.image_url})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          opacity: picked.length >= MAX_SNAPS && !on ? 0.4 : 1,
+                        }}
+                      >
+                        {on && (
+                          <span
+                            style={{
+                              position: 'absolute',
+                              top: 6,
+                              right: 6,
+                              width: 26,
+                              height: 26,
+                              borderRadius: '50%',
+                              background: RED,
+                              color: '#050615',
+                              fontFamily: 'Helvetica, Arial, sans-serif',
+                              fontWeight: 700,
+                              fontSize: 14,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            {idx + 1}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {note && <div style={{ marginTop: 12, fontSize: 12, color: MUTED }}>{note}</div>}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function NightNotes() {
+  const supabase = useMemo(() => getSupabaseClient(), []);
+  const [notes, setNotes] = useState([]);
+
+  async function fetchNotes() {
+    const { data } = await supabase
+      .from('night_notes')
+      .select('id, kind, text, author_name, created_at')
+      .eq('event_id', EVENT_ID)
+      .order('created_at', { ascending: false });
+    setNotes(data || []);
+  }
+
+  useEffect(() => {
+    fetchNotes();
+    const channel = supabase
+      .channel('results-night-notes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'night_notes', filter: `event_id=eq.${EVENT_ID}` }, () => fetchNotes())
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <section>
+      <div className="eyebrow" style={EYEBROW}>Notes &amp; Stories</div>
+      <div style={{ marginTop: 8, fontFamily: "'Bebas Neue', sans-serif", fontSize: 52, lineHeight: 1.05, letterSpacing: 1, color: RED }}>
+        From the night
+      </div>
+      <div style={{ marginTop: 8, fontSize: 13, color: MUTED }}>
+        Little notes and stories shared by everyone.{' '}
+        <a href="/share" style={{ color: RED, textDecoration: 'underline' }}>Add yours</a>
+      </div>
+      {notes.length === 0 ? (
+        <div style={{ marginTop: 22, fontSize: 14, color: MUTED }}>Nothing shared yet.</div>
+      ) : (
+        <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 26 }}>
+          {notes.map((n) => (
+            <div key={n.id} style={{ borderLeft: `3px solid ${RED}`, paddingLeft: 14 }}>
+              <div style={{ marginTop: 0, fontSize: 15, lineHeight: 1.55, color: SOFT, whiteSpace: 'pre-wrap' }}>{n.text}</div>
+              <div style={{ marginTop: 6, fontSize: 11, color: MUTED }}>— {n.author_name || 'anonymous'}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -1070,7 +1661,7 @@ export default function Results() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---- Film Pulse ----
+  // ---- Film Rating ----
   const pulseAverage = pulseRatings.length
     ? (pulseRatings.reduce((s, r) => s + r.rating, 0) / pulseRatings.length).toFixed(1)
     : '—';
@@ -1130,6 +1721,18 @@ export default function Results() {
   const matchTop = matchTab === 'you' ? myTop : groupTop;
 
   // ---- Confessions: most even green/yellow/red split ----
+  // every scenario with its green / yellow / red counts
+  const confessionStats = useMemo(
+    () =>
+      confessionScenarios.map((scenario) => {
+        const votes = confessionVotes.filter((v) => v.scenario_id === scenario.id);
+        const counts = { green: 0, yellow: 0, red: 0 };
+        votes.forEach((v) => { counts[v.vote] = (counts[v.vote] || 0) + 1; });
+        return { scenario, counts, total: votes.length };
+      }),
+    [confessionVotes]
+  );
+
   const mostContested = useMemo(() => {
     let best = null;
     confessionScenarios.forEach((scenario) => {
@@ -1155,17 +1758,14 @@ export default function Results() {
   return (
     <div className="screen" style={{ background: '#050615' }}>
       <div style={{ width: '100%', maxWidth: 1280, boxSizing: 'border-box', padding: '48px 48px 90px' }}>
-        <div className="eyebrow">The Drama · 2026 · Meetup Results</div>
-        <div style={{ marginTop: 10, fontFamily: "'Pinyon Script', cursive", fontSize: 56, color: TEXT }}>
-          What the room thinks
+        <div className="eyebrow" style={EYEBROW}>THE DRAMA · 2026 · MEETUP RESULTS</div>
+        <div style={{ marginTop: 6, fontFamily: "'Bebas Neue', sans-serif", fontSize: 96, lineHeight: 1, letterSpacing: 1, color: RED }}>
+          OVERVIEW
         </div>
-        <div style={{ marginTop: 8, fontSize: 13, color: MUTED }}>
-          Live results — updates as people finish the activities.
-        </div>
-
+       
         <div
           style={{
-            marginTop: 44,
+            marginTop: 20,
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: 56,
@@ -1236,9 +1836,9 @@ export default function Results() {
             )}
           </Section>
 
-          {/* Film Pulse */}
-          <Section title="FILM PULSE CHECK">
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 4 }}>
+          {/* Film Rating */}
+          <Section title="GROUP FILM RATING" style={{ alignItems: 'left', textAlign: 'left' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 10, marginTop: 4 }}>
               <div
                 style={{
                   fontFamily: "'Bebas Neue', sans-serif",
@@ -1252,65 +1852,66 @@ export default function Results() {
               </div>
               <div style={{ fontSize: 16, color: MUTED }}>/ 10</div>
             </div>
-            <div style={{ fontSize: 12, color: MUTED, marginTop: 16 }}>
+            <div style={{ fontSize: 12, color: MUTED, marginTop: 1, alignSelf: 'center' }}>
               average rating · {pulseRatings.length} vote{pulseRatings.length === 1 ? '' : 's'}
             </div>
           </Section>
 
-          {/* Confessions */}
-          <Section title="MOST CONTESTED CONFESSION">
-            {mostContested ? (
-              <>
-                <div style={{ fontSize: 22, fontWeight: 700, marginTop: 10, lineHeight: 1.35, color: TEXT }}>
-                  "{mostContested.scenario.text}"
-                </div>
-
-                <div style={{ display: 'flex', height: 22, marginTop: 30, boxShadow: '0 0 28px rgba(253,81,59,0.25)' }}>
-                  {FLAG_ROWS.map((f) => (
-                    <div
-                      key={f.id}
-                      style={{
-                        width: `${pct(mostContested.counts[f.id], mostContested.total)}%`,
-                        background: f.color,
-                        transition: 'width 0.5s',
-                      }}
-                    />
-                  ))}
-                </div>
-
-                <div style={{ display: 'flex', gap: 22, marginTop: 18, flexWrap: 'wrap' }}>
-                  {FLAG_ROWS.map((f) => (
-                    <div key={f.id}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: SOFT }}>
-                        <span style={{ width: 9, height: 9, borderRadius: '50%', background: f.color, display: 'inline-block' }} />
-                        {f.label}
-                      </div>
-                      <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 40, lineHeight: 1.1, color: TEXT }}>
-                        {pct(mostContested.counts[f.id], mostContested.total)}%
-                      </div>
+          {/* Confessions & Red Flags: all scenarios, compact. The biggest colour stays strong, the others are muted. */}
+          <Section title="CONFESSIONS & RED FLAGS">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 14 }}>
+              {confessionStats.map((c) => {
+                const top = Math.max(...FLAG_ROWS.map((f) => c.counts[f.id]));
+                const isWin = (f) => top > 0 && c.counts[f.id] === top;
+                return (
+                  <div key={c.scenario.id}>
+                    <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.4, color: TEXT }}>
+                      "{c.scenario.text}"
                     </div>
-                  ))}
-                </div>
-
-                <div style={{ fontSize: 12, color: MUTED, marginTop: 14 }}>
-                  {mostContested.total} votes
-                </div>
-              </>
-            ) : (
-              <div style={{ marginTop: 14, fontSize: 14, color: MUTED }}>No votes yet.</div>
-            )}
+                    <div style={{ display: 'flex', height: 8, marginTop: 8, background: c.total ? 'transparent' : LINE }}>
+                      {FLAG_ROWS.map((f) => (
+                        <div
+                          key={f.id}
+                          style={{
+                            width: `${pct(c.counts[f.id], c.total)}%`,
+                            background: f.color,
+                            opacity: isWin(f) ? 1 : 0.3,
+                            transition: 'width 0.5s, opacity 0.4s',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 16, marginTop: 7, flexWrap: 'wrap', alignItems: 'center', fontSize: 12 }}>
+                      {FLAG_ROWS.map((f) => (
+                        <span
+                          key={f.id}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: isWin(f) ? TEXT : MUTED, fontWeight: isWin(f) ? 700 : 400, opacity: isWin(f) ? 1 : 0.7 }}
+                        >
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: f.color, display: 'inline-block', opacity: isWin(f) ? 1 : 0.4 }} />
+                          {f.label} {pct(c.counts[f.id], c.total)}%
+                        </span>
+                      ))}
+                      <span style={{ color: MUTED, whiteSpace: 'nowrap' }}>{c.total} vote{c.total === 1 ? '' : 's'}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </Section>
         </div>
 
         <div id="recap" style={{ marginTop: 90, scrollMarginTop: 72 }}>
-          <RecapCard
+          <RecapBuilder
             pulseAverage={pulseAverage}
             pulseCount={pulseRatings.length}
+            myBars={myBars}
             groupBars={groupBars}
-            groupTop={groupTop}
-            myTop={myTop}
-            mostContested={mostContested}
+            confessionStats={confessionStats}
           />
+        </div>
+
+        <div id="notes" style={{ marginTop: 90, scrollMarginTop: 72 }}>
+          <NightNotes />
         </div>
 
         <div id="photos" style={{ marginTop: 90, scrollMarginTop: 72 }}>
@@ -1326,13 +1927,14 @@ export default function Results() {
   App created by Imogen &amp; Sophie
   <br />
   Contact us:{' '}
-  <a href="mailto:pointsofinterest.team@gmail.com">pointsofinterest.team@gmail.com</a>
+  <a href="mailto:pointsofinterest.team@gmail.com" style={{ color: 'inherit', textDecoration: 'underline' }}>pointsofinterest.team@gmail.com</a>
   <br />
   Follow us on Instagram{' '}
   <a
     href="https://www.instagram.com/points.of.interest_/"
     target="_blank"
     rel="noopener noreferrer"
+    style={{ color: 'inherit', textDecoration: 'underline' }}
   >
     @points.of.interest_
   </a>

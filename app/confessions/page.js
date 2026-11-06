@@ -262,11 +262,14 @@ export default function Confessions() {
         {done && (
           <>
             <div style={{ marginTop: 40, fontSize: 20, fontWeight: 600, textAlign: 'center' }}>
-              Thank you for participating! You can now see the results of the event.
+              Thank you for participating! Add your photos and notes from the night, then see the results.
             </div>
             <div style={{ flex: 1 }} />
-            <a href="/results" className="btn" style={{ textAlign: 'center', display: 'block' }}>
-              SEE EVENT RESULTS
+            <a href="/share" className="btn" style={{ textAlign: 'center', display: 'block' }}>
+              SHARE YOUR NIGHT
+            </a>
+            <a href="/results" className="btn" style={{ textAlign: 'center', display: 'block', borderColor: '#232850' }}>
+              SKIP TO THE RESULTS
             </a>
           </>
         )}

@@ -1,7 +1,7 @@
 # The Drama — Film Club
 
-Next.js + Supabase app for the live activities from the meetup: Film Pulse
-Check (live rating), Character Match (quiz), and Confessions & Red Flags
+Next.js + Supabase app for the live activities from the meetup: Film Rating
+(live rating), Character Match (quiz), and Confessions & Red Flags
 (live voting), plus a live Event Results page.
 
 ## Quick start for collaborators

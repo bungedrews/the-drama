@@ -75,7 +75,7 @@ export default function FilmPulse() {
   return (
     <div className="screen" style={{ background: '#050615' }}>
       <div className="screen-inner">
-        <div className="label">FILM PULSE CHECK — LIVE</div>
+        <div className="label">FILM RATING — LIVE</div>
 
         <div style={{ marginTop: 12, fontSize: 23, fontWeight: 700 }}>
           Rate the film from 1 to 10

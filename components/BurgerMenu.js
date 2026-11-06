@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const LINKS = [
-  { href: '/film-pulse', label: 'Film Pulse Check', note: 'Rate the film' },
+  { href: '/film-pulse', label: 'Film Rating', note: 'Rate the film' },
   { href: '/character-match', label: 'Character Match', note: 'Find your persona' },
   { href: '/confessions', label: 'Confessions & Red Flags', note: 'Vote live' },
+  { href: '/share', label: 'Share Your Night', note: 'Photos & notes' },
   { href: '/results', label: 'Event Results', note: 'What the room thinks' },
 ];
 
