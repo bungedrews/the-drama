@@ -506,8 +506,9 @@ function PhotoWall() {
         style={{
           marginTop: 30,
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
+          gridTemplateColumns: 'repeat(2, 1fr)', // always 2 per row for a clear overview
           gap: 30,
+          maxWidth: 760,
           padding: '8px 4px',
         }}
       >
