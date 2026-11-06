@@ -1152,19 +1152,34 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
   const [pickerOpen, setPickerOpen] = useState(false);
   const [fontId, setFontId] = useState('script');
   const [addOpen, setAddOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [dragging, setDragging] = useState(null);
   const wrapRef = useRef(null);
 
-  useEffect(() => {
+  const loadPhotos = () =>
     supabase
       .from('event_photos')
       .select('id, image_url')
       .eq('event_id', EVENT_ID)
       .order('created_at', { ascending: false })
-      .limit(80)
+      .limit(200)
       .then(({ data }) => setPhotos(data || []));
+
+  useEffect(() => {
+    loadPhotos();
+    const channel = supabase
+      .channel('recap-photos-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_photos', filter: `event_id=eq.${EVENT_ID}` }, () => loadPhotos())
+      .subscribe();
+    return () => supabase.removeChannel(channel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // always show the newest uploads when the picker opens
+  useEffect(() => {
+    if (pickerOpen) loadPhotos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickerOpen]);
 
   const snapCount = blocks.includes('snaps') ? (picked.length || Math.min(3, photos.length)) : 0;
   const used = blocks.reduce((s, b) => s + blockH(b, snapCount), 0);
@@ -1288,7 +1303,7 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
       const cfg = JSON.parse(dataKey);
 
       let imageUrl = null;
-      if (blobRef.current) {
+      if (kind !== 'preview' && blobRef.current) {
         const bmp = await createImageBitmap(blobRef.current);
         const c = document.createElement('canvas');
         c.width = 540;
@@ -1315,6 +1330,13 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
     } catch (e) {}
   }
 
+  function openPreview() {
+    if (!blobRef.current) return;
+    setNote(null);
+    setPreviewOpen(true);
+    logShare('preview');
+  }
+
   function handleSave() {
     if (!blobRef.current) return;
     triggerDownload(blobRef.current, 'the-drama-recap.png');
@@ -1322,13 +1344,14 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
     setNote('Saved. On iPhone you can also press and hold the image → Add to Photos.');
   }
 
-  async function handleInstagram() {
+  async function handleShare() {
     if (!blobRef.current) return;
     const file = new File([blobRef.current], 'the-drama-recap.png', { type: 'image/png' });
-    logShare('instagram');
+    logShare('share'); // tapped Share
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: 'The Drama', text: 'My night at The Drama' });
+        logShare('share_done'); // the share sheet finished (they picked an app); which app is not visible to websites
         setNote(null);
       } catch (e) {
         if (e.name !== 'AbortError') setNote('Could not open the share sheet. Use "Save as photo" and post it from Instagram.');
@@ -1370,7 +1393,32 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
         Start with a blank canvas, add what you want to remember and share it.
       </div>
 
-      <div style={{ marginTop: 26, display: 'flex', gap: 40, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      <div style={{ marginTop: 22 }}>
+        <div style={sectionLabel}>LOOK</div>
+        <div style={{ marginTop: 8, display: 'flex', gap: 10 }}>
+          {Object.entries(THEMES).map(([id, t]) => (
+            <button
+              key={id}
+              onClick={() => setThemeId(id)}
+              style={{
+                margin: 0,
+                width: 'auto',
+                padding: '8px 14px',
+                fontSize: 13,
+                letterSpacing: 0,
+                fontFamily: 'Helvetica, Arial, sans-serif',
+                background: t.bg,
+                color: t.accent,
+                border: `2px solid ${themeId === id ? TEXT : LINE}`,
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 22, display: 'flex', gap: 40, flexWrap: 'wrap', alignItems: 'flex-start' }}>
         <div style={{ width: 300, flexShrink: 0 }}>
           <div ref={wrapRef} style={{ position: 'relative', border: `1px solid ${LINE}`, background: '#0e1030' }}>
             {preview ? (
@@ -1516,38 +1564,45 @@ function RecapBuilder({ pulseAverage, pulseCount, myBars, groupBars, confessionS
             </div>
           )}
 
-          <div style={{ marginTop: 26 }}>
-            <div style={sectionLabel}>LOOK</div>
-            <div style={{ marginTop: 8, display: 'flex', gap: 10 }}>
-              {Object.entries(THEMES).map(([id, t]) => (
-                <button
-                  key={id}
-                  onClick={() => setThemeId(id)}
-                  style={{
-                    margin: 0,
-                    width: 'auto',
-                    padding: '8px 14px',
-                    fontSize: 13,
-                    letterSpacing: 0,
-                    fontFamily: 'Helvetica, Arial, sans-serif',
-                    background: t.bg,
-                    color: t.accent,
-                    border: `2px solid ${themeId === id ? TEXT : LINE}`,
-                  }}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <button onClick={handleInstagram} disabled={!preview || !blocks.length}>POST TO INSTAGRAM</button>
-            <button onClick={handleSave} disabled={!preview || !blocks.length} style={{ borderColor: LINE }}>SAVE AS PHOTO</button>
-            {note && <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5, marginTop: 8 }}>{note}</div>}
+          <div style={{ marginTop: 0 }}>
+            <button
+              onClick={openPreview}
+              disabled={!preview || !blocks.length}
+              style={{ background: RED, borderColor: RED, color: '#050615', fontWeight: 700, opacity: !preview || !blocks.length ? 0.4 : 1 }}
+            >
+              PREVIEW AND SHARE
+            </button>
+            {!blocks.length && <div style={{ fontSize: 12, color: MUTED, marginTop: 8 }}>Add something to your recap first.</div>}
+            {note && !previewOpen && <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5, marginTop: 8 }}>{note}</div>}
           </div>
         </div>
       </div>
+
+      {previewOpen && (
+        <div
+          onClick={() => setPreviewOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(5,6,21,0.94)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 380, maxHeight: '94vh', display: 'flex', flexDirection: 'column', background: '#0b0d28', border: `1px solid ${LINE}`, boxShadow: '0 24px 60px rgba(0,0,0,0.7)' }}
+          >
+            <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: `1px solid ${LINE}` }}>
+              <div style={{ flex: 1, fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, letterSpacing: 1, color: RED, lineHeight: 1 }}>YOUR RECAP</div>
+              <button onClick={() => setPreviewOpen(false)} style={{ margin: 0, width: 'auto', padding: '8px 14px', fontSize: 13 }}>CLOSE</button>
+            </div>
+            <div style={{ padding: 14, overflowY: 'auto' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {preview && <img src={preview} alt="Your recap" style={{ width: '100%', maxHeight: '58vh', objectFit: 'contain', display: 'block', border: `1px solid ${LINE}`, background: '#000' }} />}
+              <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <button onClick={handleShare} style={{ background: RED, borderColor: RED, color: '#050615', fontWeight: 700 }}>SHARE</button>
+                <button onClick={handleSave} style={{ borderColor: LINE }}>SAVE AS PHOTO</button>
+              </div>
+              {note && <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5, marginTop: 8 }}>{note}</div>}
+            </div>
+          </div>
+        </div>
+      )}
 
       {addOpen && (
         <div

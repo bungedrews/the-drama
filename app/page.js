@@ -117,7 +117,7 @@ export default function Landing() {
               lineHeight: 1.6,
             }}
           >
-            Hosted by <span style={{ fontWeight: 600 }}>Lakaii</span>
+            Hosted by <span style={{ fontWeight: 600 }}>Studio.Kaii</span>
             <br />
             with <span style={{ fontWeight: 600 }}>Imogen</span> &amp;{' '}
             <span style={{ fontWeight: 600 }}>Sophie</span>
