@@ -134,7 +134,7 @@ export default function FilmPulse() {
 
         {submitted && (
           <div style={{ marginTop: 26, borderTop: '1px solid #232850', paddingTop: 22 }}>
-            <div className="label">LIVE ROOM AVERAGE</div>
+            <div className="label">RATING</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 10 }}>
               <div style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 58, lineHeight: 1 }}>
                 {average}

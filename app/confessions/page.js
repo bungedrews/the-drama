@@ -225,7 +225,7 @@ export default function Confessions() {
                   {saving ? 'SUBMITTING…' : 'SUBMIT FLAG'}
                 </button>
                 <div style={{ marginTop: 14, fontSize: 11, color: 'rgba(243,238,230,0.4)' }}>
-                  Flags rise as people vote. You'll see how the room voted once you submit.
+                  Flags rise as people vote.
                 </div>
               </>
             )}
@@ -262,7 +262,7 @@ export default function Confessions() {
         {done && (
           <>
             <div style={{ marginTop: 40, fontSize: 20, fontWeight: 600, textAlign: 'center' }}>
-              That's every scenario — see how the room voted at the event.
+              Thank you for participating! You can now see the results of the event.
             </div>
             <div style={{ flex: 1 }} />
             <a href="/results" className="btn" style={{ textAlign: 'center', display: 'block' }}>
